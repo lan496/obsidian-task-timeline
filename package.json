@@ -5,12 +5,14 @@
   "main": "main.js",
   "type": "module",
   "scripts": {
+    "predev": "npm run copy-assets",
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "version": "node version-bump.mjs && git add manifest.json versions.json",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "copy-assets": "node scripts/copy-assets.mjs"
   },
   "keywords": [],
   "license": "0-BSD",
