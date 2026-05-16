@@ -20,11 +20,51 @@ async function readMarkdownDocuments(app: App): Promise<MarkdownDocument[]> {
   return documents;
 }
 
+type TaskDateKind = "tasks" | "reminder" | "kanban";
+
 interface ParsedTask {
   text: string;
   path: string;
   line: number;
   done: boolean;
+  date?: string;
+  time?: string;
+  dateKind?: TaskDateKind;
+}
+
+function extractTaskDate(text: string): {
+  date: string;
+  time?: string;
+  dateKind: TaskDateKind;
+} | null {
+  const tasksMatch = text.match(/📅\s*(\d{4}-\d{2}-\d{2})/);
+  if (tasksMatch !== null && tasksMatch[1] !== undefined) {
+    return {
+      date: tasksMatch[1],
+      dateKind: "tasks",
+    };
+  }
+
+  const reminderMatch = text.match(
+    /\(@(\d{4}-\d{2}-\d{2})(?:\s+(\d{2}:\d{2}))?\)/
+  );
+  if (reminderMatch !== null && reminderMatch[1] !== undefined) {
+    return {
+      date: reminderMatch[1],
+      time: reminderMatch[2],
+      dateKind: "reminder",
+    };
+  }
+
+  const kanbanMatch = text.match(/@\{(\d{4}-\d{2}-\d{2})\}/);
+  if (kanbanMatch !== null && kanbanMatch[1] !== undefined) {
+    return {
+      date: kanbanMatch[1],
+      dateKind: "kanban",
+    };
+  }
+
+  return null;
 }
 
 function parseTasks(document: MarkdownDocument): ParsedTask[] {
@@ -45,12 +85,14 @@ function parseTasks(document: MarkdownDocument): ParsedTask[] {
     }
 
     const done = match[1]?.toLowerCase() === "x";
+    const taskDate = extractTaskDate(text);
 
     tasks.push({
       text,
       path: document.path,
       line: index + 1,
       done,
+      ...taskDate,
     });
   }
   return tasks;
@@ -84,9 +126,14 @@ class TaskTimelineView extends ItemView {
 
     const list = this.contentEl.createEl("ul");
     for (const task of tasks) {
-      const status = task.done ? "✅" : "❌";
+      const status = task.done ? "done" : "todo";
+      const dateLabel =
+        task.date == undefined
+          ? "no date"
+          : `${task.date}${task.time === undefined ? "" : ` ${task.time}`} [${task.dateKind}]`;
+
       list.createEl("li", {
-        text: `[${status}] ${task.text} (${task.path}:${task.line})`,
+        text: `[${status}] ${dateLabel}: ${task.text} (${task.path}:${task.line})`,
       });
     }
   }
