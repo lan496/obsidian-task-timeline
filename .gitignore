@@ -18,5 +18,8 @@ main.js
 # obsidian
 data.json
 
+# Local Obsidian vault used for plugin development
+dev-vault
+
 # Exclude macOS Finder (System Explorer) View States
 .DS_Store
