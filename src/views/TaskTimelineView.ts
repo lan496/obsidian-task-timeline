@@ -17,6 +17,10 @@ export const VIEW_TYPE_TASK_TIMELINE = "task-timeline-view";
 const BAR_GAP_PX = 2;
 const MIN_BAR_PX = 6;
 const ROW_HEIGHT_PX = 32;
+const DRAG_THRESHOLD_PX = 4;
+const ZOOM_STEP = 1.15;
+const MIN_ZOOM_FACTOR = 0.25;
+const MAX_ZOOM_FACTOR = 8;
 
 export interface SettingsView {
   settings: TaskTimelineSettings;
@@ -31,6 +35,7 @@ export class TaskTimelineView extends ItemView {
   private currentLevel: ZoomLevel;
   private currentRange: { start: string; end: string } | null = null;
   private currentDayWidth = 0;
+  private zoomFactor = 1;
   private readonly scheduleRender = debounce(
     () => {
       this.render();
@@ -72,6 +77,7 @@ export class TaskTimelineView extends ItemView {
     }
     const midpoint = this.viewportMidpointDate();
     this.currentLevel = level;
+    this.zoomFactor = 1;
     this.render();
     if (midpoint !== null) {
       this.scrollToDate(midpoint);
@@ -83,18 +89,18 @@ export class TaskTimelineView extends ItemView {
   }
 
   // Stretch days to fill the visible width when the natural timeline is
-  // shorter than the container. The configured `dayWidth` acts as a
-  // lower bound — never shrink below it.
+  // shorter than the container, then multiply by the user's wheel-zoom
+  // factor. The configured `dayWidth` acts as a lower bound for the
+  // pre-zoom scale.
   private effectiveDayWidth(totalDays: number): number {
     const base = this.dayWidth();
     if (totalDays <= 0) {
-      return base;
+      return base * this.zoomFactor;
     }
     const available = this.contentEl.clientWidth - 24;
-    if (available <= 0) {
-      return base;
-    }
-    return Math.max(base, available / totalDays);
+    const stretched =
+      available > 0 ? Math.max(base, available / totalDays) : base;
+    return stretched * this.zoomFactor;
   }
 
   private timelineScroller(): HTMLElement | null {
@@ -181,6 +187,7 @@ export class TaskTimelineView extends ItemView {
     );
 
     const main = this.contentEl.createDiv({ cls: "task-timeline-main" });
+    this.attachPanAndZoom(main);
     this.renderHeader(main, header, dayWidth, timelineWidth);
 
     const body = main.createDiv({ cls: "task-timeline-body" });
@@ -240,6 +247,90 @@ export class TaskTimelineView extends ItemView {
       sub.style.width = `${timelineWidth}px`;
       renderTickRow(sub, header.sub, dayWidth);
     }
+  }
+
+  private attachPanAndZoom(main: HTMLElement): void {
+    main.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) {
+        return;
+      }
+      const startX = e.clientX;
+      const startScroll = main.scrollLeft;
+      let dragging = false;
+
+      const move = (ev: PointerEvent) => {
+        const dx = ev.clientX - startX;
+        if (!dragging && Math.abs(dx) > DRAG_THRESHOLD_PX) {
+          dragging = true;
+          main.classList.add("is-dragging");
+          try {
+            main.setPointerCapture(ev.pointerId);
+          } catch {
+            // Some environments may not allow capture; harmless.
+          }
+        }
+        if (dragging) {
+          main.scrollLeft = startScroll - dx;
+          ev.preventDefault();
+        }
+      };
+
+      const finish = () => {
+        main.removeEventListener("pointermove", move);
+        main.removeEventListener("pointerup", finish);
+        main.removeEventListener("pointercancel", finish);
+        if (!dragging) {
+          return;
+        }
+        main.classList.remove("is-dragging");
+        // Swallow the click that would otherwise fire on whatever bar
+        // the drag passed over.
+        const blockClick = (ev: Event) => {
+          ev.stopPropagation();
+          ev.preventDefault();
+          main.removeEventListener("click", blockClick, true);
+        };
+        main.addEventListener("click", blockClick, true);
+      };
+
+      main.addEventListener("pointermove", move);
+      main.addEventListener("pointerup", finish);
+      main.addEventListener("pointercancel", finish);
+    });
+
+    main.addEventListener(
+      "wheel",
+      (e) => {
+        if (!(e.ctrlKey || e.metaKey)) {
+          return;
+        }
+        e.preventDefault();
+        if (this.currentDayWidth <= 0) {
+          return;
+        }
+        const rect = main.getBoundingClientRect();
+        const cursorX = e.clientX - rect.left;
+        const dateOffset =
+          (cursorX + main.scrollLeft) / this.currentDayWidth;
+        const factor = e.deltaY > 0 ? 1 / ZOOM_STEP : ZOOM_STEP;
+        const next = this.zoomFactor * factor;
+        const clamped = Math.max(
+          MIN_ZOOM_FACTOR,
+          Math.min(MAX_ZOOM_FACTOR, next)
+        );
+        if (clamped === this.zoomFactor) {
+          return;
+        }
+        this.zoomFactor = clamped;
+        this.render();
+        const restored = this.timelineScroller();
+        if (restored !== null) {
+          restored.scrollLeft =
+            dateOffset * this.currentDayWidth - cursorX;
+        }
+      },
+      { passive: false }
+    );
   }
 
   private async openTask(task: DatedTask): Promise<void> {
