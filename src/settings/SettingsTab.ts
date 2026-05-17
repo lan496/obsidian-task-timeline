@@ -67,6 +67,23 @@ export class TaskTimelineSettingsTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
+      .setName("Start of week")
+      .setDesc("Used when laying out the week-level axis.")
+      .addDropdown((drop) =>
+        drop
+          .addOption("mon", "Monday")
+          .addOption("sun", "Sunday")
+          .setValue(this.host.settings.weekStart)
+          .onChange(async (value) => {
+            this.host.settings.weekStart = value as WeekStart;
+            await this.host.saveSettings();
+            this.host.onSettingsChanged();
+          })
+      );
+
+    new Setting(containerEl).setName("Kanban").setHeading();
+
+    new Setting(containerEl)
       .setName("Ignore columns")
       .setDesc(
         "Comma-separated heading names; tasks under any of these are hidden, useful for skipping kanban-style done columns."
@@ -77,21 +94,6 @@ export class TaskTimelineSettingsTab extends PluginSettingTab {
           .setValue(this.host.settings.ignoreColumns.join(", "))
           .onChange(async (value) => {
             this.host.settings.ignoreColumns = parseFolderList(value);
-            await this.host.saveSettings();
-            this.host.onSettingsChanged();
-          })
-      );
-
-    new Setting(containerEl)
-      .setName("Start of week")
-      .setDesc("Used when laying out the week-level axis.")
-      .addDropdown((drop) =>
-        drop
-          .addOption("mon", "Monday")
-          .addOption("sun", "Sunday")
-          .setValue(this.host.settings.weekStart)
-          .onChange(async (value) => {
-            this.host.settings.weekStart = value as WeekStart;
             await this.host.saveSettings();
             this.host.onSettingsChanged();
           })
