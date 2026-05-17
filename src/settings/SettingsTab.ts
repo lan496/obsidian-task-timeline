@@ -67,6 +67,22 @@ export class TaskTimelineSettingsTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
+      .setName("Ignore columns")
+      .setDesc(
+        "Comma-separated heading names; tasks under any of these are hidden, useful for skipping kanban-style done columns."
+      )
+      .addText((text) =>
+        text
+          .setPlaceholder("Done, archive")
+          .setValue(this.host.settings.ignoreColumns.join(", "))
+          .onChange(async (value) => {
+            this.host.settings.ignoreColumns = parseFolderList(value);
+            await this.host.saveSettings();
+            this.host.onSettingsChanged();
+          })
+      );
+
+    new Setting(containerEl)
       .setName("Start of week")
       .setDesc("Used when laying out the week-level axis.")
       .addDropdown((drop) =>

@@ -17,6 +17,10 @@ export interface ParsedTask {
   hostPath: string;
   hostLine: number;
   pagePath?: string;
+  // Most recent markdown heading (any level) above the checkbox.
+  // Used to filter out tasks under columns like "Done" in kanban-style
+  // notes.
+  column?: string;
   done: boolean;
   due?: string;
   start?: string;

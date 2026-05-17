@@ -8,6 +8,7 @@ import {
 
 const TASK_LINE = /^\s*[-*]\s+\[( |x|X)\]\s+(.*)$/;
 const SINGLE_WIKILINK_BODY = /^\s*\[\[([^\]|]+)(?:\|([^\]]+))?\]\]\s*$/;
+const HEADING_LINE = /^#+\s+(.+)$/;
 
 interface DueMatch {
   due: string;
@@ -67,7 +68,14 @@ function stripSpan(text: string, span: { start: number; end: number }): string {
 export function parseTasks(document: MarkdownDocument): ParsedTask[] {
   const tasks: ParsedTask[] = [];
   const lines = document.content.split("\n");
+  let currentColumn: string | undefined = undefined;
   for (const [index, line] of lines.entries()) {
+    const headingMatch = line.match(HEADING_LINE);
+    if (headingMatch !== null && headingMatch[1] !== undefined) {
+      currentColumn = headingMatch[1].trim();
+      continue;
+    }
+
     const match = line.match(TASK_LINE);
     if (match === null) {
       continue;
@@ -81,6 +89,8 @@ export function parseTasks(document: MarkdownDocument): ParsedTask[] {
 
     const done = doneMarker.toLowerCase() === "x";
     const linkMatch = body.match(SINGLE_WIKILINK_BODY);
+    const columnField =
+      currentColumn !== undefined ? { column: currentColumn } : {};
 
     if (linkMatch !== null && linkMatch[1] !== undefined) {
       const target = linkMatch[1].trim();
@@ -92,6 +102,7 @@ export function parseTasks(document: MarkdownDocument): ParsedTask[] {
         hostLine: index + 1,
         pagePath: target,
         done,
+        ...columnField,
       });
       continue;
     }
@@ -114,6 +125,7 @@ export function parseTasks(document: MarkdownDocument): ParsedTask[] {
         ? { due: dueMatch.due, dueSource: dueMatch.dueSource }
         : {}),
       ...range,
+      ...columnField,
     });
   }
   return tasks;

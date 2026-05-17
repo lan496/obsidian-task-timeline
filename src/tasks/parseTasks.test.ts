@@ -182,6 +182,51 @@ describe("parseTasks: dash ranges", () => {
   });
 });
 
+describe("parseTasks: column tracking", () => {
+  it("attaches the most recent heading as the task's column", () => {
+    const tasks = parseTasks(
+      doc(
+        [
+          "## Backlog",
+          "- [ ] Plan launch (@2025-05-20)",
+          "## Done",
+          "- [x] Old task (@2025-05-15)",
+        ].join("\n")
+      )
+    );
+    expect(tasks.map((t) => t.column)).toEqual(["Backlog", "Done"]);
+  });
+
+  it("leaves column undefined for tasks before any heading", () => {
+    const task = only(parseTasks(doc("- [ ] Free task (@2025-05-20)")));
+    expect(task.column).toBeUndefined();
+  });
+
+  it("tracks heading switches in order", () => {
+    const tasks = parseTasks(
+      doc(
+        [
+          "# Top",
+          "- [ ] A (@2025-05-20)",
+          "## Sub",
+          "- [ ] B (@2025-05-21)",
+          "# Back",
+          "- [ ] C (@2025-05-22)",
+        ].join("\n")
+      )
+    );
+    expect(tasks.map((t) => t.column)).toEqual(["Top", "Sub", "Back"]);
+  });
+
+  it("captures the column on linked-page tasks too", () => {
+    const tasks = parseTasks(
+      doc(["## Done", "- [ ] [[Page]]"].join("\n"))
+    );
+    expect(tasks[0]!.column).toBe("Done");
+    expect(tasks[0]!.form).toBe("linked-page");
+  });
+});
+
 describe("parseTasks: linked-page form", () => {
   it("detects a bare [[Page]] body", () => {
     const task = only(parseTasks(doc("- [ ] [[Plan launch]]")));

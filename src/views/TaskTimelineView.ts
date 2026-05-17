@@ -138,9 +138,11 @@ export class TaskTimelineView extends ItemView {
     this.contentEl.createEl("h2", { text: "Task timeline" });
     this.renderToolbar();
 
+    const ignored = new Set(this.settingsView.settings.ignoreColumns);
     const datedTasks = this.store
       .getAll()
       .filter(hasDate)
+      .filter((t) => t.column === undefined || !ignored.has(t.column))
       .sort((a, b) => a.due.localeCompare(b.due));
 
     const start = minDate(datedTasks.map((t) => t.start ?? t.due));

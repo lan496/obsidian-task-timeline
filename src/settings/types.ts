@@ -8,6 +8,7 @@ export interface TaskTimelineSettings {
   defaultZoom: ZoomLevel;
   dayWidths: Record<ZoomLevel, number>;
   weekStart: WeekStart;
+  ignoreColumns: string[];
 }
 
 export const DEFAULT_SETTINGS: TaskTimelineSettings = {
@@ -16,6 +17,7 @@ export const DEFAULT_SETTINGS: TaskTimelineSettings = {
   defaultZoom: "month",
   dayWidths: { ...DEFAULT_DAY_WIDTH },
   weekStart: "mon",
+  ignoreColumns: ["Done"],
 };
 
 export function shouldIncludePath(
