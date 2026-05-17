@@ -18,7 +18,6 @@ export const VIEW_TYPE_TASK_TIMELINE = "task-timeline-view";
 
 const BAR_GAP_PX = 2;
 const MIN_BAR_PX = 6;
-const ROW_HEIGHT_PX = 32;
 const DRAG_THRESHOLD_PX = 4;
 const ZOOM_STEP = 1.15;
 const MIN_ZOOM_FACTOR = 0.25;
@@ -142,7 +141,6 @@ export class TaskTimelineView extends ItemView {
   private render(): void {
     this.contentEl.empty();
     this.contentEl.addClass("task-timeline-page");
-    this.contentEl.createEl("h2", { text: "Task timeline" });
     this.renderToolbar();
 
     const ignored = new Set(this.settingsView.settings.ignoreColumns);
@@ -209,22 +207,23 @@ export class TaskTimelineView extends ItemView {
     );
 
     const main = this.contentEl.createDiv({ cls: "task-timeline-main" });
+    main.style.setProperty("--task-timeline-width", `${timelineWidth}px`);
     this.attachPanAndZoom(main);
     this.renderHeader(main, header, dayWidth, timelineWidth);
 
     const body = main.createDiv({ cls: "task-timeline-body" });
-    body.style.width = `${timelineWidth}px`;
 
     const today = todayIso();
     if (today >= start && today <= end) {
       const marker = body.createDiv({ cls: "task-timeline-today" });
-      marker.style.left = `${diffDays(start, today) * dayWidth}px`;
+      marker.style.setProperty(
+        "--task-timeline-today-left",
+        `${diffDays(start, today) * dayWidth}px`
+      );
     }
 
     for (const task of tasks) {
       const row = body.createDiv({ cls: "task-timeline-row" });
-      row.style.width = `${timelineWidth}px`;
-      row.style.height = `${ROW_HEIGHT_PX}px`;
 
       const barStart = task.start ?? task.due;
       const barDue = task.due;
@@ -269,10 +268,10 @@ export class TaskTimelineView extends ItemView {
       if (task.done) barClasses.push("is-done");
       if (overflow !== null) barClasses.push(`is-overflow-${overflow}`);
       const bar = row.createEl("div", { cls: barClasses.join(" ") });
-      bar.style.left = `${left}px`;
-      bar.style.width = `${width}px`;
+      bar.style.setProperty("--task-timeline-bar-left", `${left}px`);
+      bar.style.setProperty("--task-timeline-bar-width", `${width}px`);
       if (!task.done) {
-        bar.style.backgroundColor = barColor(task);
+        bar.style.setProperty("--task-timeline-bar-color", barColor(task));
       }
       bar.title = tooltip;
       bar.addEventListener("click", () => {
@@ -287,16 +286,25 @@ export class TaskTimelineView extends ItemView {
           text,
         });
       } else {
+        const labelClasses = ["task-timeline-bar-label"];
+        if (task.done) labelClasses.push("is-done");
+        labelClasses.push(
+          overflow === "future" ? "is-anchor-right" : "is-anchor-left"
+        );
         const label = row.createEl("div", {
-          cls: task.done
-            ? "task-timeline-bar-label is-done"
-            : "task-timeline-bar-label",
+          cls: labelClasses.join(" "),
           text,
         });
         if (overflow === "future") {
-          label.style.right = `${timelineWidth - left + 4}px`;
+          label.style.setProperty(
+            "--task-timeline-label-right",
+            `${timelineWidth - left + 4}px`
+          );
         } else {
-          label.style.left = `${left + width + 4}px`;
+          label.style.setProperty(
+            "--task-timeline-label-left",
+            `${left + width + 4}px`
+          );
         }
         label.title = tooltip;
         label.addEventListener("click", () => {
@@ -310,30 +318,26 @@ export class TaskTimelineView extends ItemView {
     timeline: HTMLElement,
     header: Header,
     dayWidth: number,
-    timelineWidth: number
+    _timelineWidth: number
   ): void {
     const headerEl = timeline.createDiv({ cls: "task-timeline-header" });
-    headerEl.style.width = `${timelineWidth}px`;
 
     if (header.major.length > 0) {
       const major = headerEl.createDiv({
         cls: "task-timeline-header-row task-timeline-header-major",
       });
-      major.style.width = `${timelineWidth}px`;
       renderTickRow(major, header.major, dayWidth);
     }
 
     const minor = headerEl.createDiv({
       cls: "task-timeline-header-row task-timeline-header-minor",
     });
-    minor.style.width = `${timelineWidth}px`;
     renderTickRow(minor, header.minor, dayWidth);
 
     if (header.sub !== undefined && header.sub.length > 0) {
       const sub = headerEl.createDiv({
         cls: "task-timeline-header-row task-timeline-header-sub",
       });
-      sub.style.width = `${timelineWidth}px`;
       renderTickRow(sub, header.sub, dayWidth);
     }
   }
@@ -456,7 +460,10 @@ function renderTickRow(
       cls: "task-timeline-header-cell",
       text: tick.label,
     });
-    cell.style.width = `${tick.spanDays * dayWidth}px`;
+    cell.style.setProperty(
+      "--task-timeline-cell-width",
+      `${tick.spanDays * dayWidth}px`
+    );
   }
 }
 

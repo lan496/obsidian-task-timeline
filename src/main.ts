@@ -71,7 +71,7 @@ export default class TaskTimelinePlugin extends Plugin {
       this.app.vault.on(
         "rename",
         (file: TAbstractFile, oldPath: string) => {
-          if (file instanceof TFile) {
+          if (file instanceof TFile && file.extension === "md") {
             void this.taskStore.onFileRenamed(file, oldPath);
           }
         }
