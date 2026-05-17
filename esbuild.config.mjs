@@ -44,7 +44,7 @@ const context = await esbuild.context({
   logLevel: "info",
   sourcemap: prod ? false : "inline",
   treeShaking: true,
-  outfile: "dev-vault/.obsidian/plugins/obsidian-task-timeline/main.js",
+  outfile: prod ? "main.js" : "dev-vault/.obsidian/plugins/obsidian-task-timeline/main.js",
   minify: prod,
 });
 
