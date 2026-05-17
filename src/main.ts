@@ -76,6 +76,21 @@ function hasDate(task: ParsedTask): task is DatedTask {
   return task.date !== undefined && task.dateKind !== undefined;
 }
 
+function groupTasksByDate(tasks: DatedTask[]): Map<string, DatedTask[]> {
+  const grouped = new Map<string, DatedTask[]>();
+
+  for (const task of tasks) {
+    const existing = grouped.get(task.date);
+    if (existing === undefined) {
+      grouped.set(task.date, [task]);
+    } else {
+      existing.push(task);
+    }
+  }
+
+  return grouped;
+}
+
 function parseTasks(document: MarkdownDocument): ParsedTask[] {
   const tasks: ParsedTask[] = [];
   const lines = document.content.split("\n");
@@ -137,14 +152,20 @@ class TaskTimelineView extends ItemView {
       const bKey = `${b.date} ${b.time ?? ""}`;
       return aKey.localeCompare(bKey);
     });
+    const groupedTasks = groupTasksByDate(datedTasks);
 
-    const list = this.contentEl.createEl("ul");
-    for (const task of datedTasks) {
-      const status = task.done ? "done" : "todo";
-      const timeLabel = task.time === undefined ? "" : ` ${task.time}`;
-      list.createEl("li", {
-        text: `[${status}] ${task.date}${timeLabel} [${task.dateKind}]: ${task.text} (${task.path}:${task.line})`,
-      });
+    for (const [date, tasksOnDate] of groupedTasks) {
+      this.contentEl.createEl("h3", { text: date });
+
+      const list = this.contentEl.createEl("ul");
+
+      for (const task of tasksOnDate) {
+        const status = task.done ? "done" : "todo";
+        const timeLabel = task.time === undefined ? "" : ` ${task.time}`;
+        list.createEl("li", {
+          text: `[${status}]${timeLabel} [${task.dateKind}]: ${task.text} (${task.path}:${task.line})`,
+        });
+      }
     }
   }
 
