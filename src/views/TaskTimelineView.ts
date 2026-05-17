@@ -3,13 +3,15 @@ import { TaskTimelineSettings } from "../settings/types";
 import { TaskStore, Unsubscribe } from "../store/TaskStore";
 import { hasDate } from "../tasks/parseTasks";
 import { DatedTask } from "../tasks/types";
-import { addDays, diffDays, maxDate, minDate } from "../timeline/dateMath";
+import { addDays, diffDays } from "../timeline/dateMath";
 import {
   Header,
   Tick,
   ZoomLevel,
   ZOOM_LEVELS,
+  addPeriods,
   getHeader,
+  startOfPeriod,
 } from "../timeline/zoom";
 
 export const VIEW_TYPE_TASK_TIMELINE = "task-timeline-view";
@@ -144,16 +146,21 @@ export class TaskTimelineView extends ItemView {
     this.renderToolbar();
 
     const ignored = new Set(this.settingsView.settings.ignoreColumns);
-    const cap = maxDisplayDate(
-      this.currentLevel,
+    const periods = Math.max(
+      1,
       this.settingsView.settings.maxAhead[this.currentLevel]
     );
+    const windowStart = startOfPeriod(todayIso(), this.currentLevel);
+    const windowEnd = addDays(
+      addPeriods(windowStart, this.currentLevel, periods),
+      -1
+    );
+
     const datedTasks = this.store
       .getAll()
       .filter(hasDate)
       .filter((t) => !t.done)
       .filter((t) => t.column === undefined || !ignored.has(t.column))
-      .filter((t) => (t.start ?? t.due) <= cap)
       .sort((a, b) => {
         const aStart = a.start ?? a.due;
         const bStart = b.start ?? b.due;
@@ -161,24 +168,14 @@ export class TaskTimelineView extends ItemView {
         return byStart !== 0 ? byStart : a.due.localeCompare(b.due);
       });
 
-    const start = minDate(datedTasks.map((t) => t.start ?? t.due));
-    // Clamp the natural end at the per-zoom cap so a single far-future
-    // task can't stretch the whole timeline.
-    const naturalEnd = maxDate(datedTasks.map((t) => t.due));
-    const end = naturalEnd === null
-      ? null
-      : naturalEnd > cap
-        ? cap
-        : naturalEnd;
-
-    if (start === null || end === null) {
+    if (datedTasks.length === 0) {
       this.currentRange = null;
       this.contentEl.createEl("p", { text: "No dated tasks found." });
       return;
     }
 
-    this.currentRange = { start, end };
-    this.renderTimeline(datedTasks, start, end);
+    this.currentRange = { start: windowStart, end: windowEnd };
+    this.renderTimeline(datedTasks, windowStart, windowEnd);
   }
 
   private renderToolbar(): void {
@@ -224,18 +221,48 @@ export class TaskTimelineView extends ItemView {
       row.style.height = `${ROW_HEIGHT_PX}px`;
 
       const barStart = task.start ?? task.due;
-      const offsetDays = diffDays(start, barStart);
-      const durationDays = diffDays(barStart, task.due) + 1;
-      const left = offsetDays * dayWidth;
+      const barDue = task.due;
+
+      let overflow: "past" | "future" | null = null;
+      let renderStart: string;
+      let renderEnd: string;
+      if (barDue < start) {
+        overflow = "past";
+        renderStart = start;
+        renderEnd = start;
+      } else if (barStart > end) {
+        overflow = "future";
+        renderStart = end;
+        renderEnd = end;
+      } else {
+        renderStart = barStart < start ? start : barStart;
+        renderEnd = barDue > end ? end : barDue;
+      }
+
+      const offsetDays = diffDays(start, renderStart);
+      const durationDays = diffDays(renderStart, renderEnd) + 1;
       const width = Math.max(durationDays * dayWidth - BAR_GAP_PX, MIN_BAR_PX);
+      // Keep edge-pinned bars inside the timeline regardless of MIN_BAR_PX
+      // bumping their right edge past the viewport at very low day widths.
+      const rawLeft = offsetDays * dayWidth;
+      const left =
+        rawLeft + width > timelineWidth ? timelineWidth - width : rawLeft;
       const tooltip = `${task.label} (${task.hostPath}:${task.hostLine})`;
-      const text = barText(task);
+      const baseText = barText(task);
+      const text =
+        overflow === "past"
+          ? `‹ ${baseText}`
+          : overflow === "future"
+            ? `${baseText} ›`
+            : baseText;
       const inlineFits =
+        overflow === null &&
         width >= text.length * INLINE_LABEL_CHAR_PX + INLINE_LABEL_PADDING_PX;
 
-      const bar = row.createEl("div", {
-        cls: task.done ? "task-timeline-bar is-done" : "task-timeline-bar",
-      });
+      const barClasses = ["task-timeline-bar"];
+      if (task.done) barClasses.push("is-done");
+      if (overflow !== null) barClasses.push(`is-overflow-${overflow}`);
+      const bar = row.createEl("div", { cls: barClasses.join(" ") });
       bar.style.left = `${left}px`;
       bar.style.width = `${width}px`;
       if (!task.done) {
@@ -260,7 +287,11 @@ export class TaskTimelineView extends ItemView {
             : "task-timeline-bar-label",
           text,
         });
-        label.style.left = `${left + width + 4}px`;
+        if (overflow === "future") {
+          label.style.right = `${timelineWidth - left + 4}px`;
+        } else {
+          label.style.left = `${left + width + 4}px`;
+        }
         label.title = tooltip;
         label.addEventListener("click", () => {
           void this.openTask(task);
@@ -454,17 +485,6 @@ function barText(task: DatedTask): string {
   return `${prefix}${task.label}  ${task.due}`;
 }
 
-const APPROX_DAYS_PER_UNIT: Record<ZoomLevel, number> = {
-  month: 31,
-  quarter: 93,
-  year: 366,
-};
-
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
-}
-
-function maxDisplayDate(level: ZoomLevel, maxAheadUnits: number): string {
-  const days = Math.max(0, maxAheadUnits) * APPROX_DAYS_PER_UNIT[level];
-  return addDays(todayIso(), days);
 }

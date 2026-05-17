@@ -100,7 +100,7 @@ export class TaskTimelineSettingsTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Maximum look-ahead per zoom")
+      .setName("Window size per zoom")
       .setHeading();
 
     for (const level of ZOOM_LEVELS) {
@@ -108,7 +108,9 @@ export class TaskTimelineSettingsTab extends PluginSettingTab {
         level === "month" ? "months" : level === "quarter" ? "quarters" : "years";
       new Setting(containerEl)
         .setName(capitalize(level))
-        .setDesc(`Hide tasks starting more than this many ${unit} from today.`)
+        .setDesc(
+          `Number of ${unit} the timeline spans, starting at the current ${level}. Earlier tasks pin to the left edge; later tasks pin to the right.`
+        )
         .addText((text) =>
           text
             .setPlaceholder(String(this.host.settings.maxAhead[level]))

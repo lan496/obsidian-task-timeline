@@ -131,6 +131,11 @@
   background: var(--background-modifier-border);
 }
 
+.task-timeline-bar.is-overflow-past,
+.task-timeline-bar.is-overflow-future {
+  opacity: 0.75;
+}
+
 .task-timeline-bar-label {
   position: absolute;
   top: 4px;
