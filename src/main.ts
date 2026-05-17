@@ -67,6 +67,15 @@ function extractTaskDate(text: string): {
   return null;
 }
 
+interface DatedTask extends ParsedTask {
+  date: string;
+  dateKind: TaskDateKind;
+}
+
+function hasDate(task: ParsedTask): task is DatedTask {
+  return task.date !== undefined && task.dateKind !== undefined;
+}
+
 function parseTasks(document: MarkdownDocument): ParsedTask[] {
   const tasks: ParsedTask[] = [];
   const lines = document.content.split("\n");
@@ -123,17 +132,18 @@ class TaskTimelineView extends ItemView {
 
     const documents = await readMarkdownDocuments(this.appRef);
     const tasks = documents.flatMap(parseTasks);
+    const datedTasks = tasks.filter(hasDate).sort((a, b) => {
+      const aKey = `${a.date} ${a.time ?? ""}`;
+      const bKey = `${b.date} ${b.time ?? ""}`;
+      return aKey.localeCompare(bKey);
+    });
 
     const list = this.contentEl.createEl("ul");
-    for (const task of tasks) {
+    for (const task of datedTasks) {
       const status = task.done ? "done" : "todo";
-      const dateLabel =
-        task.date == undefined
-          ? "no date"
-          : `${task.date}${task.time === undefined ? "" : ` ${task.time}`} [${task.dateKind}]`;
-
+      const timeLabel = task.time === undefined ? "" : ` ${task.time}`;
       list.createEl("li", {
-        text: `[${status}] ${dateLabel}: ${task.text} (${task.path}:${task.line})`,
+        text: `[${status}] ${task.date}${timeLabel} [${task.dateKind}]: ${task.text} (${task.path}:${task.line})`,
       });
     }
   }
