@@ -128,3 +128,19 @@ Open **Settings → Task Timeline**.
 Design notes live in [`.claude/spec.html`](./.claude/spec.html) (full
 syntax reference: precedence between markers, mixed-body
 fall-through, range validity rules).
+
+## Release
+
+Releases are produced by the GitHub Actions workflow in
+[`.github/workflows/release.yml`](./.github/workflows/release.yml), which
+triggers on tags matching `MAJOR.MINOR.PATCH`.
+
+1. Bump the version locally with `npm version patch|minor|major`. The
+   `version` script in `package.json` runs
+   [`version-bump.mjs`](./version-bump.mjs), which updates
+   `manifest.json` and `versions.json` and stages them.
+2. `git push` the commit, then `git push --tags`.
+3. The workflow verifies the tag matches `manifest.json`'s `version`,
+   runs lint and tests, builds `main.js`, and publishes a GitHub release
+   with `main.js`, `manifest.json`, and `styles.css` attached. Once the
+   release is live, Obsidian's community plugin store will pick it up.
