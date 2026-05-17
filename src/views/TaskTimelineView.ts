@@ -404,10 +404,14 @@ function renderTickRow(
 }
 
 function barText(task: DatedTask): string {
+  const prefix =
+    task.dueSource === "kanban" && task.column !== undefined
+      ? `[${task.column}] `
+      : "";
   if (task.start !== undefined && task.start !== task.due) {
-    return `${task.label}  ${task.start} → ${task.due}`;
+    return `${prefix}${task.label}  ${task.start} → ${task.due}`;
   }
-  return `${task.label}  ${task.due}`;
+  return `${prefix}${task.label}  ${task.due}`;
 }
 
 const APPROX_DAYS_PER_UNIT: Record<ZoomLevel, number> = {
