@@ -67,6 +67,23 @@ export class TaskTimelineSettingsTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
+      .setName("Start of week")
+      .setDesc("Used when laying out the week-level axis.")
+      .addDropdown((drop) =>
+        drop
+          .addOption("mon", "Monday")
+          .addOption("sun", "Sunday")
+          .setValue(this.host.settings.weekStart)
+          .onChange(async (value) => {
+            this.host.settings.weekStart = value as WeekStart;
+            await this.host.saveSettings();
+            this.host.onSettingsChanged();
+          })
+      );
+
+    new Setting(containerEl).setName("Kanban").setHeading();
+
+    new Setting(containerEl)
       .setName("Ignore columns")
       .setDesc(
         "Comma-separated heading names; tasks under any of these are hidden, useful for skipping kanban-style done columns."
@@ -83,22 +100,7 @@ export class TaskTimelineSettingsTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Start of week")
-      .setDesc("Used when laying out the week-level axis.")
-      .addDropdown((drop) =>
-        drop
-          .addOption("mon", "Monday")
-          .addOption("sun", "Sunday")
-          .setValue(this.host.settings.weekStart)
-          .onChange(async (value) => {
-            this.host.settings.weekStart = value as WeekStart;
-            await this.host.saveSettings();
-            this.host.onSettingsChanged();
-          })
-      );
-
-    new Setting(containerEl)
-      .setName("Maximum look-ahead per zoom")
+      .setName("Window size per zoom")
       .setHeading();
 
     for (const level of ZOOM_LEVELS) {
@@ -106,7 +108,9 @@ export class TaskTimelineSettingsTab extends PluginSettingTab {
         level === "month" ? "months" : level === "quarter" ? "quarters" : "years";
       new Setting(containerEl)
         .setName(capitalize(level))
-        .setDesc(`Hide tasks starting more than this many ${unit} from today.`)
+        .setDesc(
+          `Number of ${unit} the timeline spans, starting at the current ${level}. Earlier tasks pin to the left edge; later tasks pin to the right.`
+        )
         .addText((text) =>
           text
             .setPlaceholder(String(this.host.settings.maxAhead[level]))

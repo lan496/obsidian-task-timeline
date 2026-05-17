@@ -200,6 +200,18 @@ function quarterShortTicks(start: string, end: string): Tick[] {
   );
 }
 
+export function startOfPeriod(iso: string, level: ZoomLevel): string {
+  if (level === "month") return startOfMonth(iso);
+  if (level === "quarter") return startOfQuarter(iso);
+  return startOfYear(iso);
+}
+
+export function addPeriods(iso: string, level: ZoomLevel, n: number): string {
+  if (level === "month") return addMonths(iso, n);
+  if (level === "quarter") return addMonths(iso, n * 3);
+  return addYears(iso, n);
+}
+
 export function getHeader(
   start: string,
   end: string,
