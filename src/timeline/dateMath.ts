@@ -1,7 +1,7 @@
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export function parseDateOnly(date: string): Date {
-  return new Date(`${date}T00:00:00`);
+  return new Date(`${date}T00:00:00Z`);
 }
 
 export function diffDays(from: string, to: string): number {
@@ -26,8 +26,15 @@ export function maxDate(dates: string[]): string | null {
 
 export function addDays(date: string, days: number): string {
   const parsed = parseDateOnly(date);
-  parsed.setDate(parsed.getDate() + days);
+  parsed.setUTCDate(parsed.getUTCDate() + days);
   return parsed.toISOString().slice(0, 10);
+}
+
+export function validateStart(
+  start: string | undefined,
+  due: string
+): string | undefined {
+  return start !== undefined && start <= due ? start : undefined;
 }
 
 export function enumerateDates(start: string, end: string): string[] {
