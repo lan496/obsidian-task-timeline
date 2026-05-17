@@ -238,6 +238,9 @@ export class TaskTimelineView extends ItemView {
       });
       bar.style.left = `${left}px`;
       bar.style.width = `${width}px`;
+      if (!task.done) {
+        bar.style.backgroundColor = barColor(task);
+      }
       bar.title = tooltip;
       bar.addEventListener("click", () => {
         void this.openTask(task);
@@ -418,6 +421,26 @@ function renderTickRow(
     });
     cell.style.width = `${tick.spanDays * dayWidth}px`;
   }
+}
+
+// Group related tasks visually: same column / page / host file -> same color.
+function barColor(task: DatedTask): string {
+  if (task.dueSource === "kanban" && task.column !== undefined) {
+    return hashColor(task.column);
+  }
+  if (task.form === "linked-page" && task.pagePath !== undefined) {
+    return hashColor(task.pagePath);
+  }
+  return hashColor(task.hostPath);
+}
+
+function hashColor(key: string): string {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) {
+    h = (Math.imul(h, 31) + key.charCodeAt(i)) | 0;
+  }
+  const hue = ((h % 360) + 360) % 360;
+  return `hsl(${hue}, 55%, 42%)`;
 }
 
 function barText(task: DatedTask): string {
