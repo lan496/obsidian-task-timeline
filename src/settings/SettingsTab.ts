@@ -97,6 +97,32 @@ export class TaskTimelineSettingsTab extends PluginSettingTab {
           })
       );
 
+    new Setting(containerEl)
+      .setName("Maximum look-ahead per zoom")
+      .setHeading();
+
+    for (const level of ZOOM_LEVELS) {
+      const unit =
+        level === "month" ? "months" : level === "quarter" ? "quarters" : "years";
+      new Setting(containerEl)
+        .setName(capitalize(level))
+        .setDesc(`Hide tasks starting more than this many ${unit} from today.`)
+        .addText((text) =>
+          text
+            .setPlaceholder(String(this.host.settings.maxAhead[level]))
+            .setValue(String(this.host.settings.maxAhead[level]))
+            .onChange(async (value) => {
+              const n = Number(value);
+              if (!Number.isFinite(n) || n < 0) {
+                return;
+              }
+              this.host.settings.maxAhead[level] = Math.floor(n);
+              await this.host.saveSettings();
+              this.host.onSettingsChanged();
+            })
+        );
+    }
+
     new Setting(containerEl).setName("Day width per zoom (px)").setHeading();
 
     for (const level of ZOOM_LEVELS) {

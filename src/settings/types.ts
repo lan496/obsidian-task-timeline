@@ -9,6 +9,10 @@ export interface TaskTimelineSettings {
   dayWidths: Record<ZoomLevel, number>;
   weekStart: WeekStart;
   ignoreColumns: string[];
+  // Maximum number of level-units to show ahead of today, per zoom.
+  // Tasks whose start is past `today + maxAhead[level]` are hidden so
+  // a single far-future task doesn't stretch the whole timeline.
+  maxAhead: Record<ZoomLevel, number>;
 }
 
 export const DEFAULT_SETTINGS: TaskTimelineSettings = {
@@ -18,6 +22,7 @@ export const DEFAULT_SETTINGS: TaskTimelineSettings = {
   dayWidths: { ...DEFAULT_DAY_WIDTH },
   weekStart: "mon",
   ignoreColumns: ["Done"],
+  maxAhead: { month: 12, quarter: 8, year: 10 },
 };
 
 export function shouldIncludePath(

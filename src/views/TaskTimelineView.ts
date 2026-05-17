@@ -139,14 +139,26 @@ export class TaskTimelineView extends ItemView {
     this.renderToolbar();
 
     const ignored = new Set(this.settingsView.settings.ignoreColumns);
+    const cap = maxDisplayDate(
+      this.currentLevel,
+      this.settingsView.settings.maxAhead[this.currentLevel]
+    );
     const datedTasks = this.store
       .getAll()
       .filter(hasDate)
       .filter((t) => t.column === undefined || !ignored.has(t.column))
+      .filter((t) => (t.start ?? t.due) <= cap)
       .sort((a, b) => a.due.localeCompare(b.due));
 
     const start = minDate(datedTasks.map((t) => t.start ?? t.due));
-    const end = maxDate(datedTasks.map((t) => t.due));
+    // Clamp the natural end at the per-zoom cap so a single far-future
+    // task can't stretch the whole timeline.
+    const naturalEnd = maxDate(datedTasks.map((t) => t.due));
+    const end = naturalEnd === null
+      ? null
+      : naturalEnd > cap
+        ? cap
+        : naturalEnd;
 
     if (start === null || end === null) {
       this.currentRange = null;
@@ -390,4 +402,19 @@ function barText(task: DatedTask): string {
     return `${task.label}  ${task.start} → ${task.due}`;
   }
   return `${task.label}  ${task.due}`;
+}
+
+const APPROX_DAYS_PER_UNIT: Record<ZoomLevel, number> = {
+  month: 31,
+  quarter: 93,
+  year: 366,
+};
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function maxDisplayDate(level: ZoomLevel, maxAheadUnits: number): string {
+  const days = Math.max(0, maxAheadUnits) * APPROX_DAYS_PER_UNIT[level];
+  return addDays(todayIso(), days);
 }

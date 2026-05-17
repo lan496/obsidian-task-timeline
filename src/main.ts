@@ -105,6 +105,16 @@ export default class TaskTimelinePlugin extends Plugin {
       widths[level] = value;
     }
     this.settings.dayWidths = widths as Record<ZoomLevel, number>;
+
+    const persistedAhead = this.settings.maxAhead as
+      | Record<string, number | undefined>
+      | undefined;
+    const aheads: Record<string, number> = {};
+    for (const level of ZOOM_LEVELS) {
+      aheads[level] =
+        persistedAhead?.[level] ?? DEFAULT_SETTINGS.maxAhead[level];
+    }
+    this.settings.maxAhead = aheads as Record<ZoomLevel, number>;
   }
 
   private applyPathFilter(): void {
