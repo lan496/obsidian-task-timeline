@@ -203,15 +203,27 @@ export class TaskTimelineView extends ItemView {
       const durationDays = diffDays(barStart, task.due) + 1;
       const left = offsetDays * dayWidth;
       const width = Math.max(durationDays * dayWidth - BAR_GAP_PX, MIN_BAR_PX);
+      const tooltip = `${task.label} (${task.hostPath}:${task.hostLine})`;
 
       const bar = row.createEl("div", {
         cls: task.done ? "task-timeline-bar is-done" : "task-timeline-bar",
-        text: barText(task),
       });
       bar.style.left = `${left}px`;
       bar.style.width = `${width}px`;
-      bar.title = `${task.label} (${task.hostPath}:${task.hostLine})`;
+      bar.title = tooltip;
       bar.addEventListener("click", () => {
+        void this.openTask(task);
+      });
+
+      const label = row.createEl("div", {
+        cls: task.done
+          ? "task-timeline-bar-label is-done"
+          : "task-timeline-bar-label",
+        text: barText(task),
+      });
+      label.style.left = `${left + width + 4}px`;
+      label.title = tooltip;
+      label.addEventListener("click", () => {
         void this.openTask(task);
       });
     }

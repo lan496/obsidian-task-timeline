@@ -121,22 +121,31 @@
   position: absolute;
   top: 4px;
   bottom: 4px;
-  padding: 0 8px;
-  display: flex;
-  align-items: center;
   border-radius: 4px;
   background: var(--interactive-accent);
-  color: var(--text-on-accent);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   cursor: pointer;
-  font-size: 12px;
   box-sizing: border-box;
 }
 
 .task-timeline-bar.is-done {
   background: var(--background-modifier-border);
+}
+
+.task-timeline-bar-label {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  white-space: nowrap;
+  color: var(--text-normal);
+  font-size: 12px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.task-timeline-bar-label.is-done {
   color: var(--text-muted);
   text-decoration: line-through;
 }
