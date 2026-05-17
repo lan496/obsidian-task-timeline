@@ -68,15 +68,8 @@ export class TaskStore {
         changed = true;
       }
     }
-    const hosts = this.hostsByPage.get(file.path);
-    if (hosts !== undefined && hosts.size > 0) {
-      for (const hostPath of hosts) {
-        const hostFile = this.app.vault.getAbstractFileByPath(hostPath);
-        if (hostFile instanceof TFile) {
-          await this.parseFile(hostFile);
-          changed = true;
-        }
-      }
+    if (await this.reparseDependents(file)) {
+      changed = true;
     }
     if (changed) {
       this.notify();
@@ -87,18 +80,28 @@ export class TaskStore {
     if (file.extension !== "md") {
       return;
     }
-    if (!this.pathFilter(file.path)) {
-      return;
+    let changed = false;
+    if (this.pathFilter(file.path)) {
+      await this.parseFile(file);
+      changed = true;
     }
-    await this.parseFile(file);
-    this.notify();
+    if (await this.reparseDependents(file)) {
+      changed = true;
+    }
+    if (changed) {
+      this.notify();
+    }
   }
 
-  onFileDeleted(file: TAbstractFile): void {
+  async onFileDeleted(file: TAbstractFile): Promise<void> {
     if (!(file instanceof TFile) || file.extension !== "md") {
       return;
     }
-    if (this.dropHost(file.path)) {
+    let changed = this.dropHost(file.path);
+    if (await this.reparseDependents(file)) {
+      changed = true;
+    }
+    if (changed) {
       this.notify();
     }
   }
@@ -108,8 +111,13 @@ export class TaskStore {
       return;
     }
     this.dropHost(oldPath);
-    this.hostsByPage.delete(oldPath);
-    await this.parseFile(file);
+    if (await this.reparseHostsByKeys(referenceKeys(oldPath))) {
+      // noop: changes will be folded into the notify below
+    }
+    if (this.pathFilter(file.path)) {
+      await this.parseFile(file);
+    }
+    await this.reparseDependents(file);
     this.notify();
   }
 
@@ -118,19 +126,20 @@ export class TaskStore {
     const raw = parseTasks({ path: file.path, content });
     const resolved = resolveLinkedPages(raw, this.pageProvider);
     this.dropHost(file.path);
-    if (resolved.length > 0) {
-      this.tasksByHost.set(file.path, resolved);
-      for (const task of resolved) {
-        if (task.pagePath === undefined) {
-          continue;
-        }
-        let set = this.hostsByPage.get(task.pagePath);
-        if (set === undefined) {
-          set = new Set();
-          this.hostsByPage.set(task.pagePath, set);
-        }
-        set.add(file.path);
+    if (resolved.length === 0) {
+      return;
+    }
+    this.tasksByHost.set(file.path, resolved);
+    for (const task of resolved) {
+      if (task.pagePath === undefined) {
+        continue;
       }
+      let set = this.hostsByPage.get(task.pagePath);
+      if (set === undefined) {
+        set = new Set();
+        this.hostsByPage.set(task.pagePath, set);
+      }
+      set.add(file.path);
     }
   }
 
@@ -156,9 +165,52 @@ export class TaskStore {
     return true;
   }
 
+  // Re-resolve every host that references `file` under any of the link
+  // forms a wikilink could use to point at it (full path, path without
+  // extension, basename, basename + ".md"). Without this fan-out, a
+  // create / delete / rename / property edit of the target page leaves
+  // dependents pointing at stale data.
+  private async reparseDependents(file: TAbstractFile): Promise<boolean> {
+    return await this.reparseHostsByKeys(
+      file instanceof TFile ? referenceKeys(file.path) : [file.path]
+    );
+  }
+
+  private async reparseHostsByKeys(keys: string[]): Promise<boolean> {
+    const hosts = new Set<string>();
+    for (const key of keys) {
+      const set = this.hostsByPage.get(key);
+      if (set === undefined) {
+        continue;
+      }
+      for (const host of set) {
+        hosts.add(host);
+      }
+    }
+    if (hosts.size === 0) {
+      return false;
+    }
+    for (const hostPath of hosts) {
+      const hostFile = this.app.vault.getAbstractFileByPath(hostPath);
+      if (hostFile instanceof TFile) {
+        await this.parseFile(hostFile);
+      }
+    }
+    return true;
+  }
+
   private notify(): void {
     for (const listener of this.listeners) {
       listener();
     }
   }
+}
+
+function referenceKeys(path: string): string[] {
+  const withoutExt = path.replace(/\.md$/, "");
+  const slash = withoutExt.lastIndexOf("/");
+  const basename = slash >= 0 ? withoutExt.slice(slash + 1) : withoutExt;
+  return Array.from(
+    new Set([path, withoutExt, basename, `${basename}.md`])
+  );
 }

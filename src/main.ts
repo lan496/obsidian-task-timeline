@@ -58,7 +58,7 @@ export default class TaskTimelinePlugin extends Plugin {
     );
     this.registerEvent(
       this.app.vault.on("delete", (file: TAbstractFile) => {
-        this.taskStore.onFileDeleted(file);
+        void this.taskStore.onFileDeleted(file);
       })
     );
     this.registerEvent(

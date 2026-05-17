@@ -33,7 +33,7 @@ export function resolveLinkedPages(
     }
     const resolved = pages.resolve(task.pagePath, task.hostPath);
     if (resolved === null) {
-      return { ...task, pagePath: undefined };
+      return task;
     }
     const due = readDateProperty(resolved.properties, "due");
     const start = readDateProperty(resolved.properties, "start");

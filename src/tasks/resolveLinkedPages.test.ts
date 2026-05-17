@@ -68,11 +68,14 @@ describe("resolveLinkedPages", () => {
     expect(task!.due).toBeUndefined();
   });
 
-  it("clears pagePath when the link cannot be resolved (broken link)", () => {
+  it("preserves the raw link text when the link cannot be resolved", () => {
     const provider = staticProvider({});
     const [task] = resolveLinkedPages([linked("Missing")], provider);
-    expect(task!.pagePath).toBeUndefined();
+    // pagePath stays as the raw link so the reverse index in TaskStore
+    // still has a key to find this task once the target page is created.
+    expect(task!.pagePath).toBe("Missing");
     expect(task!.due).toBeUndefined();
+    expect(task!.dueSource).toBeUndefined();
   });
 
   it("reads start when both start and due are valid ISO dates", () => {
