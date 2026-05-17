@@ -14,7 +14,9 @@ import {
 
 export const VIEW_TYPE_TASK_TIMELINE = "task-timeline-view";
 
-const BAR_GUTTER_RATIO = 0.2;
+const BAR_GAP_PX = 2;
+const MIN_BAR_PX = 6;
+const ROW_HEIGHT_PX = 32;
 
 export interface SettingsView {
   settings: TaskTimelineSettings;
@@ -79,13 +81,15 @@ export class TaskTimelineView extends ItemView {
     return this.settingsView.settings.dayWidths[this.currentLevel];
   }
 
+  private timelineScroller(): HTMLElement | null {
+    return this.contentEl.querySelector<HTMLElement>(".task-timeline-main");
+  }
+
   private viewportMidpointDate(): string | null {
     if (this.currentRange === null) {
       return null;
     }
-    const main = this.contentEl.querySelector<HTMLElement>(
-      ".task-timeline-main"
-    );
+    const main = this.timelineScroller();
     if (main === null) {
       return null;
     }
@@ -98,9 +102,7 @@ export class TaskTimelineView extends ItemView {
     if (this.currentRange === null) {
       return;
     }
-    const main = this.contentEl.querySelector<HTMLElement>(
-      ".task-timeline-main"
-    );
+    const main = this.timelineScroller();
     if (main === null) {
       return;
     }
@@ -110,6 +112,7 @@ export class TaskTimelineView extends ItemView {
 
   private render(): void {
     this.contentEl.empty();
+    this.contentEl.addClass("task-timeline-page");
     this.contentEl.createEl("h2", { text: "Task timeline" });
     this.renderToolbar();
 
@@ -160,47 +163,22 @@ export class TaskTimelineView extends ItemView {
       this.settingsView.settings.weekStart
     );
 
-    const root = this.contentEl.createDiv({ cls: "task-timeline-root" });
-    const sidebar = root.createDiv({ cls: "task-timeline-sidebar" });
-    const timeline = root.createDiv({ cls: "task-timeline-main" });
+    const main = this.contentEl.createDiv({ cls: "task-timeline-main" });
+    this.renderHeader(main, header, dayWidth, timelineWidth);
 
-    const sidebarHeader = sidebar.createDiv({
-      cls: "task-timeline-sidebar-header",
-      text: "Tasks",
-    });
-    sidebarHeader.style.height = `${headerHeight(header)}px`;
-
-    this.renderHeader(timeline, header, dayWidth, timelineWidth);
-
-    const barGutterPx = dayWidth * BAR_GUTTER_RATIO;
+    const body = main.createDiv({ cls: "task-timeline-body" });
+    body.style.width = `${timelineWidth}px`;
 
     for (const task of tasks) {
-      const sidebarRow = sidebar.createDiv({
-        cls: "task-timeline-sidebar-row",
-      });
-      const labelEl = sidebarRow.createEl("span", { text: task.label });
-      const sourceHint = sidebarRow.createEl("span", {
-        cls: "task-timeline-source-hint",
-        text: task.hostPath,
-      });
-      sourceHint.addEventListener("click", () => {
-        void this.openTaskSource(task);
-      });
-      labelEl.addEventListener("click", () => {
-        void this.openTaskLabel(task);
-      });
-
-      const row = timeline.createDiv({ cls: "task-timeline-row" });
+      const row = body.createDiv({ cls: "task-timeline-row" });
       row.style.width = `${timelineWidth}px`;
+      row.style.height = `${ROW_HEIGHT_PX}px`;
 
       const barStart = task.start ?? task.due;
       const offsetDays = diffDays(start, barStart);
       const durationDays = diffDays(barStart, task.due) + 1;
       const left = offsetDays * dayWidth;
-      const width = Math.max(
-        durationDays * dayWidth - barGutterPx,
-        Math.max(dayWidth - barGutterPx, 4)
-      );
+      const width = Math.max(durationDays * dayWidth - BAR_GAP_PX, MIN_BAR_PX);
 
       const bar = row.createEl("div", {
         cls: task.done ? "task-timeline-bar is-done" : "task-timeline-bar",
@@ -208,8 +186,9 @@ export class TaskTimelineView extends ItemView {
       });
       bar.style.left = `${left}px`;
       bar.style.width = `${width}px`;
+      bar.title = `${task.label} (${task.hostPath}:${task.hostLine})`;
       bar.addEventListener("click", () => {
-        void this.openTaskLabel(task);
+        void this.openTask(task);
       });
     }
   }
@@ -238,26 +217,21 @@ export class TaskTimelineView extends ItemView {
     renderTickRow(minor, header.minor, dayWidth);
   }
 
-  private async openTaskSource(task: DatedTask): Promise<void> {
-    await this.openFileAt(task.hostPath, task.hostLine);
-  }
-
-  private async openTaskLabel(task: DatedTask): Promise<void> {
+  private async openTask(task: DatedTask): Promise<void> {
     if (task.form === "linked-page" && task.pagePath !== undefined) {
-      await this.openFileAt(task.pagePath, null);
-      return;
+      const file = this.app.vault.getAbstractFileByPath(task.pagePath);
+      if (file instanceof TFile) {
+        await this.openFileAt(file, null);
+        return;
+      }
     }
-    await this.openFileAt(task.hostPath, task.hostLine);
+    const host = this.app.vault.getAbstractFileByPath(task.hostPath);
+    if (host instanceof TFile) {
+      await this.openFileAt(host, task.hostLine);
+    }
   }
 
-  private async openFileAt(
-    path: string,
-    line: number | null
-  ): Promise<void> {
-    const file = this.app.vault.getAbstractFileByPath(path);
-    if (!(file instanceof TFile)) {
-      return;
-    }
+  private async openFileAt(file: TFile, line: number | null): Promise<void> {
     const leaf = this.app.workspace.getLeaf(false);
     await leaf.openFile(file);
     if (line !== null) {
@@ -280,8 +254,4 @@ function renderTickRow(
     cell.style.left = `${tick.offsetDays * dayWidth}px`;
     cell.style.width = `${tick.spanDays * dayWidth}px`;
   }
-}
-
-function headerHeight(header: Header): number {
-  return header.major.length > 0 ? 56 : 28;
 }

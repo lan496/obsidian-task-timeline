@@ -25,6 +25,15 @@ describe("parseTasks: due-date markers", () => {
     });
   });
 
+  it("parses reminder with a HH:mm component and discards the time", () => {
+    const task = only(
+      parseTasks(doc("- [ ] With time (@2025-05-20 09:00)"))
+    );
+    expect(task.due).toBe("2025-05-20");
+    expect(task.dueSource).toBe("reminder");
+    expect(task.label).toBe("With time");
+  });
+
   it("parses Tasks-style due emoji", () => {
     const task = only(parseTasks(doc("- [ ] Plan launch \u{1F4C5} 2025-05-20")));
     expect(task).toMatchObject({

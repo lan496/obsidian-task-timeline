@@ -17,15 +17,22 @@ interface DueMatch {
 }
 
 const DATE = "\\d{4}-\\d{2}-\\d{2}";
-const RANGE = `(${DATE})(?:\\s+-\\s+(${DATE}))?`;
+// Reminder syntax allows an optional `HH:mm` after each date. The plugin
+// only renders at day resolution so the time component is matched and
+// discarded — but without this the closing `)` no longer follows the
+// date and the whole marker stops matching.
+const TIME_OPT = "(?:\\s+\\d{1,2}:\\d{2})?";
+const REMINDER_DATE = `(${DATE})${TIME_OPT}`;
+const REMINDER_RANGE = `${REMINDER_DATE}(?:\\s+-\\s+${REMINDER_DATE})?`;
+const PLAIN_RANGE = `(${DATE})(?:\\s+-\\s+(${DATE}))?`;
 
 const DATE_MARKERS: ReadonlyArray<{
   source: DueDateSource;
   pattern: RegExp;
 }> = [
-  { source: "reminder", pattern: new RegExp(`\\(@${RANGE}\\)`) },
-  { source: "tasks", pattern: new RegExp(`\\u{1F4C5}\\s*${RANGE}`, "u") },
-  { source: "kanban", pattern: new RegExp(`@\\{${RANGE}\\}`) },
+  { source: "reminder", pattern: new RegExp(`\\(@${REMINDER_RANGE}\\)`) },
+  { source: "tasks", pattern: new RegExp(`\\u{1F4C5}\\s*${PLAIN_RANGE}`, "u") },
+  { source: "kanban", pattern: new RegExp(`@\\{${PLAIN_RANGE}\\}`) },
 ];
 
 function findDueMatch(text: string): DueMatch | null {

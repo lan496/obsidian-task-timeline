@@ -91,11 +91,11 @@ export default class TaskTimelinePlugin extends Plugin {
   }
 
   async activateView() {
-    const leaf = this.app.workspace.getRightLeaf(false);
-
-    if (!leaf) {
-      return;
-    }
+    const existing = this.app.workspace.getLeavesOfType(
+      VIEW_TYPE_TASK_TIMELINE
+    );
+    const leaf =
+      existing.length > 0 ? existing[0]! : this.app.workspace.getLeaf("tab");
 
     await leaf.setViewState({
       type: VIEW_TYPE_TASK_TIMELINE,

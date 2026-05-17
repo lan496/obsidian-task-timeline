@@ -1,3 +1,7 @@
+.task-timeline-page {
+  padding: 8px 12px;
+}
+
 .task-timeline-toolbar {
   display: flex;
   gap: 4px;
@@ -20,34 +24,28 @@
   border-color: var(--interactive-accent);
 }
 
-.task-timeline-root {
-  display: grid;
-  grid-template-columns: 280px minmax(600px, 1fr);
-  border: 1px solid var(--background-modifier-border);
-  overflow: auto;
-}
-
-.task-timeline-sidebar {
-  border-right: 1px solid var(--background-modifier-border);
-  background: var(--background-secondary);
-}
-
 .task-timeline-main {
+  position: relative;
+  border: 1px solid var(--background-modifier-border);
   background: var(--background-primary);
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: 70vh;
 }
 
 .task-timeline-header {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
   background: var(--background-primary);
   border-bottom: 1px solid var(--background-modifier-border);
 }
 
 .task-timeline-header-row {
   position: relative;
-  height: 28px;
+  height: 24px;
   border-bottom: 1px solid var(--background-modifier-border);
 }
 
@@ -59,7 +57,7 @@
   position: absolute;
   top: 0;
   height: 100%;
-  padding: 6px 8px;
+  padding: 4px 8px;
   border-right: 1px solid var(--background-modifier-border);
   white-space: nowrap;
   overflow: hidden;
@@ -73,47 +71,28 @@
   background: var(--background-secondary);
 }
 
-.task-timeline-sidebar-header {
-  padding: 8px 12px;
-  font-weight: 600;
-  border-bottom: 1px solid var(--background-modifier-border);
-  box-sizing: border-box;
-}
-
-.task-timeline-sidebar-row,
-.task-timeline-row {
-  height: 32px;
-  border-bottom: 1px solid var(--background-modifier-border);
-  box-sizing: border-box;
-}
-
-.task-timeline-sidebar-row {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 4px 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-}
-
-.task-timeline-source-hint {
-  font-size: 10px;
-  color: var(--text-muted);
-  cursor: pointer;
+.task-timeline-body {
+  position: relative;
 }
 
 .task-timeline-row {
   position: relative;
+  border-bottom: 1px solid var(--background-modifier-border);
+  box-sizing: border-box;
+}
+
+.task-timeline-row:last-child {
+  border-bottom: 0;
 }
 
 .task-timeline-bar {
   position: absolute;
-  top: 5px;
-  height: 22px;
-  padding: 2px 8px;
-  border-radius: 6px;
+  top: 4px;
+  bottom: 4px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
   background: var(--interactive-accent);
   color: var(--text-on-accent);
   white-space: nowrap;
@@ -121,6 +100,7 @@
   text-overflow: ellipsis;
   cursor: pointer;
   font-size: 12px;
+  box-sizing: border-box;
 }
 
 .task-timeline-bar.is-done {
