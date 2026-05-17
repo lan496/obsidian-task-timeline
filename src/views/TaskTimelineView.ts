@@ -215,6 +215,12 @@ export class TaskTimelineView extends ItemView {
     const body = main.createDiv({ cls: "task-timeline-body" });
     body.style.width = `${timelineWidth}px`;
 
+    const today = todayIso();
+    if (today >= start && today <= end) {
+      const marker = body.createDiv({ cls: "task-timeline-today" });
+      marker.style.left = `${diffDays(start, today) * dayWidth}px`;
+    }
+
     for (const task of tasks) {
       const row = body.createDiv({ cls: "task-timeline-row" });
       row.style.width = `${timelineWidth}px`;

@@ -107,6 +107,16 @@
   position: relative;
 }
 
+.task-timeline-today {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px dashed var(--text-accent);
+  pointer-events: none;
+  z-index: 1;
+}
+
 .task-timeline-row {
   position: relative;
   border-bottom: 1px solid var(--background-modifier-border);
