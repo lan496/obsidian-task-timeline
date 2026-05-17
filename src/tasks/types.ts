@@ -1,4 +1,10 @@
-export type TaskDateKind = "tasks" | "reminder" | "kanban";
+export type TaskForm = "inline" | "linked-page";
+
+export type DueDateSource =
+  | "page-property"
+  | "reminder"
+  | "tasks"
+  | "kanban";
 
 export interface MarkdownDocument {
   path: string;
@@ -6,16 +12,18 @@ export interface MarkdownDocument {
 }
 
 export interface ParsedTask {
-  text: string;
-  path: string;
-  line: number;
+  form: TaskForm;
+  label: string;
+  hostPath: string;
+  hostLine: number;
+  pagePath?: string;
   done: boolean;
-  date?: string;
-  time?: string;
-  dateKind?: TaskDateKind;
+  due?: string;
+  start?: string;
+  dueSource?: DueDateSource;
 }
 
 export interface DatedTask extends ParsedTask {
-  date: string;
-  dateKind: TaskDateKind;
+  due: string;
+  dueSource: DueDateSource;
 }

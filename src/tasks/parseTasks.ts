@@ -1,71 +1,117 @@
-import { DatedTask, MarkdownDocument, ParsedTask, TaskDateKind } from "./types";
+import { validateStart } from "../timeline/dateMath";
+import {
+  DatedTask,
+  DueDateSource,
+  MarkdownDocument,
+  ParsedTask,
+} from "./types";
 
-function extractTaskDate(text: string): {
-  date: string;
-  time?: string;
-  dateKind: TaskDateKind;
-} | null {
-  const tasksMatch = text.match(/📅\s*(\d{4}-\d{2}-\d{2})/);
-  if (tasksMatch !== null && tasksMatch[1] !== undefined) {
+const TASK_LINE = /^\s*[-*]\s+\[( |x|X)\]\s+(.*)$/;
+const SINGLE_WIKILINK_BODY = /^\s*\[\[([^\]|]+)(?:\|([^\]]+))?\]\]\s*$/;
+
+interface DueMatch {
+  due: string;
+  start?: string;
+  dueSource: DueDateSource;
+  span: { start: number; end: number };
+}
+
+const DATE = "\\d{4}-\\d{2}-\\d{2}";
+const RANGE = `(${DATE})(?:\\s+-\\s+(${DATE}))?`;
+
+const DATE_MARKERS: ReadonlyArray<{
+  source: DueDateSource;
+  pattern: RegExp;
+}> = [
+  { source: "reminder", pattern: new RegExp(`\\(@${RANGE}\\)`) },
+  { source: "tasks", pattern: new RegExp(`\\u{1F4C5}\\s*${RANGE}`, "u") },
+  { source: "kanban", pattern: new RegExp(`@\\{${RANGE}\\}`) },
+];
+
+function findDueMatch(text: string): DueMatch | null {
+  for (const { source, pattern } of DATE_MARKERS) {
+    const match = text.match(pattern);
+    if (
+      match === null ||
+      match.index === undefined ||
+      match[1] === undefined
+    ) {
+      continue;
+    }
+    const first = match[1];
+    const second = match[2];
+    const isRange = second !== undefined;
     return {
-      date: tasksMatch[1],
-      dateKind: "tasks",
+      due: isRange ? second : first,
+      ...(isRange ? { start: first } : {}),
+      dueSource: source,
+      span: { start: match.index, end: match.index + match[0].length },
     };
   }
-
-  const reminderMatch = text.match(
-    /\(@(\d{4}-\d{2}-\d{2})(?:\s+(\d{2}:\d{2}))?\)/
-  );
-  if (reminderMatch !== null && reminderMatch[1] !== undefined) {
-    return {
-      date: reminderMatch[1],
-      time: reminderMatch[2],
-      dateKind: "reminder",
-    };
-  }
-
-  const kanbanMatch = text.match(/@\{(\d{4}-\d{2}-\d{2})\}/);
-  if (kanbanMatch !== null && kanbanMatch[1] !== undefined) {
-    return {
-      date: kanbanMatch[1],
-      dateKind: "kanban",
-    };
-  }
-
   return null;
+}
+
+function stripSpan(text: string, span: { start: number; end: number }): string {
+  return (text.slice(0, span.start) + text.slice(span.end))
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 export function parseTasks(document: MarkdownDocument): ParsedTask[] {
   const tasks: ParsedTask[] = [];
   const lines = document.content.split("\n");
   for (const [index, line] of lines.entries()) {
-    // TODO: This regex is pretty basic and may not cover all edge cases. It can be improved to handle more complex task formats.
-    const match = line.match(/^\s*[-*]\s+\[( |x|X)\]\s+(.*)$/);
-
+    const match = line.match(TASK_LINE);
     if (match === null) {
       continue;
     }
 
     const doneMarker = match[1];
-    const text = match[2];
-    if (doneMarker === undefined || text === undefined) {
+    const body = match[2];
+    if (doneMarker === undefined || body === undefined) {
       continue;
     }
 
-    const done = match[1]?.toLowerCase() === "x";
-    const taskDate = extractTaskDate(text);
+    const done = doneMarker.toLowerCase() === "x";
+    const linkMatch = body.match(SINGLE_WIKILINK_BODY);
+
+    if (linkMatch !== null && linkMatch[1] !== undefined) {
+      const target = linkMatch[1].trim();
+      const alias = linkMatch[2]?.trim();
+      tasks.push({
+        form: "linked-page",
+        label: alias ?? target,
+        hostPath: document.path,
+        hostLine: index + 1,
+        pagePath: target,
+        done,
+      });
+      continue;
+    }
+
+    const dueMatch = findDueMatch(body);
+    const label =
+      dueMatch === null ? body.trim() : stripSpan(body, dueMatch.span);
+
+    const validStart =
+      dueMatch !== null ? validateStart(dueMatch.start, dueMatch.due) : undefined;
+    const range = validStart !== undefined ? { start: validStart } : {};
 
     tasks.push({
-      text,
-      path: document.path,
-      line: index + 1,
+      form: "inline",
+      label,
+      hostPath: document.path,
+      hostLine: index + 1,
       done,
-      ...taskDate,
+      ...(dueMatch !== null
+        ? { due: dueMatch.due, dueSource: dueMatch.dueSource }
+        : {}),
+      ...range,
     });
   }
   return tasks;
 }
 
 export function hasDate(task: ParsedTask): task is DatedTask {
-  return task.date !== undefined && task.dateKind !== undefined;
+  return task.due !== undefined && task.dueSource !== undefined;
 }

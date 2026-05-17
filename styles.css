@@ -1,11 +1,25 @@
-/*
+.task-timeline-toolbar {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 8px 0;
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.task-timeline-zoom-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  font-size: 12px;
+  cursor: pointer;
+}
 
-If your plugin does not need CSS, delete this file.
+.task-timeline-zoom-btn.is-active {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-color: var(--interactive-accent);
+}
 
-*/
 .task-timeline-root {
   display: grid;
   grid-template-columns: 280px minmax(600px, 1fr);
@@ -19,7 +33,6 @@ If your plugin does not need CSS, delete this file.
 }
 
 .task-timeline-main {
-  min-width: 900px;
   background: var(--background-primary);
   overflow-x: auto;
 }
@@ -28,54 +41,67 @@ If your plugin does not need CSS, delete this file.
   position: sticky;
   top: 0;
   z-index: 1;
-  display: flex;
-  height: 36px;
-  padding: 0;
-  font-weight: 600;
   background: var(--background-primary);
   border-bottom: 1px solid var(--background-modifier-border);
 }
 
-.task-timeline-date-cell {
-  flex: 0 0 auto;
-  padding: 8px 12px;
-  border-right: 1px solid var(--background-modifier-border);
-  white-space: nowrap;
-  font-size: 12px;
+.task-timeline-header-row {
+  position: relative;
+  height: 28px;
+  border-bottom: 1px solid var(--background-modifier-border);
 }
 
-.task-timeline-bar {
+.task-timeline-header-row:last-child {
+  border-bottom: 0;
+}
+
+.task-timeline-header-cell {
   position: absolute;
-  top: 5px;
-  height: 22px;
-  min-width: 72px;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
+  top: 0;
+  height: 100%;
+  padding: 6px 8px;
+  border-right: 1px solid var(--background-modifier-border);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 11px;
+  box-sizing: border-box;
+}
+
+.task-timeline-header-major .task-timeline-header-cell {
+  font-weight: 600;
+  background: var(--background-secondary);
 }
 
 .task-timeline-sidebar-header {
-  height: 36px;
   padding: 8px 12px;
   font-weight: 600;
   border-bottom: 1px solid var(--background-modifier-border);
+  box-sizing: border-box;
 }
 
 .task-timeline-sidebar-row,
 .task-timeline-row {
   height: 32px;
   border-bottom: 1px solid var(--background-modifier-border);
+  box-sizing: border-box;
 }
 
 .task-timeline-sidebar-row {
-  padding: 6px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4px 12px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.task-timeline-source-hint {
+  font-size: 10px;
+  color: var(--text-muted);
+  cursor: pointer;
 }
 
 .task-timeline-row {
@@ -86,7 +112,6 @@ If your plugin does not need CSS, delete this file.
   position: absolute;
   top: 5px;
   height: 22px;
-  min-width: 140px;
   padding: 2px 8px;
   border-radius: 6px;
   background: var(--interactive-accent);
@@ -94,4 +119,12 @@ If your plugin does not need CSS, delete this file.
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.task-timeline-bar.is-done {
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+  text-decoration: line-through;
 }
