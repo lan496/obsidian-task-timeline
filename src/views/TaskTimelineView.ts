@@ -199,7 +199,7 @@ export class TaskTimelineView extends ItemView {
 
       const bar = row.createEl("div", {
         cls: task.done ? "task-timeline-bar is-done" : "task-timeline-bar",
-        text: task.label,
+        text: barText(task),
       });
       bar.style.left = `${left}px`;
       bar.style.width = `${width}px`;
@@ -278,4 +278,11 @@ function renderTickRow(
     });
     cell.style.width = `${tick.spanDays * dayWidth}px`;
   }
+}
+
+function barText(task: DatedTask): string {
+  if (task.start !== undefined && task.start !== task.due) {
+    return `${task.label}  ${task.start} → ${task.due}`;
+  }
+  return `${task.label}  ${task.due}`;
 }
