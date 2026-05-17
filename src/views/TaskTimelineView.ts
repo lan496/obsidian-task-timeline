@@ -30,6 +30,7 @@ export class TaskTimelineView extends ItemView {
   private unsubscribe: Unsubscribe | null = null;
   private currentLevel: ZoomLevel;
   private currentRange: { start: string; end: string } | null = null;
+  private currentDayWidth = 0;
   private readonly scheduleRender = debounce(
     () => {
       this.render();
@@ -81,12 +82,27 @@ export class TaskTimelineView extends ItemView {
     return this.settingsView.settings.dayWidths[this.currentLevel];
   }
 
+  // Stretch days to fill the visible width when the natural timeline is
+  // shorter than the container. The configured `dayWidth` acts as a
+  // lower bound — never shrink below it.
+  private effectiveDayWidth(totalDays: number): number {
+    const base = this.dayWidth();
+    if (totalDays <= 0) {
+      return base;
+    }
+    const available = this.contentEl.clientWidth - 24;
+    if (available <= 0) {
+      return base;
+    }
+    return Math.max(base, available / totalDays);
+  }
+
   private timelineScroller(): HTMLElement | null {
     return this.contentEl.querySelector<HTMLElement>(".task-timeline-main");
   }
 
   private viewportMidpointDate(): string | null {
-    if (this.currentRange === null) {
+    if (this.currentRange === null || this.currentDayWidth <= 0) {
       return null;
     }
     const main = this.timelineScroller();
@@ -94,12 +110,12 @@ export class TaskTimelineView extends ItemView {
       return null;
     }
     const midpointPx = main.scrollLeft + main.clientWidth / 2;
-    const dayOffset = Math.floor(midpointPx / this.dayWidth());
+    const dayOffset = Math.floor(midpointPx / this.currentDayWidth);
     return addDays(this.currentRange.start, dayOffset);
   }
 
   private scrollToDate(date: string): void {
-    if (this.currentRange === null) {
+    if (this.currentRange === null || this.currentDayWidth <= 0) {
       return;
     }
     const main = this.timelineScroller();
@@ -107,7 +123,7 @@ export class TaskTimelineView extends ItemView {
       return;
     }
     const offset = diffDays(this.currentRange.start, date);
-    main.scrollLeft = offset * this.dayWidth() - main.clientWidth / 2;
+    main.scrollLeft = offset * this.currentDayWidth - main.clientWidth / 2;
   }
 
   private render(): void {
@@ -153,8 +169,9 @@ export class TaskTimelineView extends ItemView {
     start: string,
     end: string
   ): void {
-    const dayWidth = this.dayWidth();
     const totalDays = diffDays(start, end) + 1;
+    const dayWidth = this.effectiveDayWidth(totalDays);
+    this.currentDayWidth = dayWidth;
     const timelineWidth = totalDays * dayWidth;
     const header = getHeader(
       start,
@@ -251,7 +268,6 @@ function renderTickRow(
       cls: "task-timeline-header-cell",
       text: tick.label,
     });
-    cell.style.left = `${tick.offsetDays * dayWidth}px`;
     cell.style.width = `${tick.spanDays * dayWidth}px`;
   }
 }
