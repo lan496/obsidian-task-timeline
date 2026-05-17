@@ -27,13 +27,13 @@ export class TaskTimelineView extends ItemView {
   }
 
   getDisplayText(): string {
-    return "Task Timeline";
+    return "Task timeline";
   }
 
   async onOpen(): Promise<void> {
     this.contentEl.empty();
 
-    this.contentEl.createEl("h2", { text: "Task Timeline" });
+    this.contentEl.createEl("h2", { text: "Task timeline" });
 
     const documents = await readMarkdownDocuments(this.appRef);
     const tasks = documents.flatMap(parseTasks);

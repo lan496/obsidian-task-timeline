@@ -6,8 +6,6 @@ import {
 
 export default class TaskTimelinePlugin extends Plugin {
   async onload() {
-    console.log("Task Timeline plugin loaded");
-
     this.registerView(
       VIEW_TYPE_TASK_TIMELINE,
       (leaf) => new TaskTimelineView(leaf, this.app)
@@ -15,15 +13,11 @@ export default class TaskTimelinePlugin extends Plugin {
 
     this.addCommand({
       id: "open-task-timeline-view",
-      name: "Open Task Timeline View",
+      name: "Open view",
       callback: async () => {
         await this.activateView();
       },
     });
-  }
-
-  onunload() {
-    console.log("Task Timeline plugin unloaded");
   }
 
   async activateView() {
@@ -38,6 +32,6 @@ export default class TaskTimelinePlugin extends Plugin {
       active: true,
     });
 
-    this.app.workspace.revealLeaf(leaf);
+    void this.app.workspace.revealLeaf(leaf);
   }
 }
