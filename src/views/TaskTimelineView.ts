@@ -146,9 +146,15 @@ export class TaskTimelineView extends ItemView {
     const datedTasks = this.store
       .getAll()
       .filter(hasDate)
+      .filter((t) => !t.done)
       .filter((t) => t.column === undefined || !ignored.has(t.column))
       .filter((t) => (t.start ?? t.due) <= cap)
-      .sort((a, b) => a.due.localeCompare(b.due));
+      .sort((a, b) => {
+        const aStart = a.start ?? a.due;
+        const bStart = b.start ?? b.due;
+        const byStart = aStart.localeCompare(bStart);
+        return byStart !== 0 ? byStart : a.due.localeCompare(b.due);
+      });
 
     const start = minDate(datedTasks.map((t) => t.start ?? t.due));
     // Clamp the natural end at the per-zoom cap so a single far-future
