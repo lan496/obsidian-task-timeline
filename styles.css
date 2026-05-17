@@ -6,3 +6,59 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+.task-timeline-root {
+  display: grid;
+  grid-template-columns: 280px minmax(600px, 1fr);
+  border: 1px solid var(--background-modifier-border);
+  overflow: auto;
+}
+
+.task-timeline-sidebar {
+  border-right: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+}
+
+.task-timeline-main {
+  min-width: 900px;
+  background: var(--background-primary);
+}
+
+.task-timeline-sidebar-header,
+.task-timeline-header {
+  height: 36px;
+  padding: 8px 12px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.task-timeline-sidebar-row,
+.task-timeline-row {
+  height: 32px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.task-timeline-sidebar-row {
+  padding: 6px 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.task-timeline-row {
+  position: relative;
+}
+
+.task-timeline-bar {
+  position: absolute;
+  left: 24px;
+  top: 5px;
+  height: 22px;
+  min-width: 140px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

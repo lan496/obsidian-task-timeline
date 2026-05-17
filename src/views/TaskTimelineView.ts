@@ -34,20 +34,31 @@ export class TaskTimelineView extends ItemView {
       const bKey = `${b.date} ${b.time ?? ""}`;
       return aKey.localeCompare(bKey);
     });
-    const groupedTasks = groupTasksByDate(datedTasks);
 
-    for (const [date, tasksOnDate] of groupedTasks) {
-      this.contentEl.createEl("h3", { text: date });
+    const root = this.contentEl.createDiv({ cls: "task-timeline-root" });
+    const sidebar = root.createDiv({ cls: "task-timelne-sidebar" });
+    const timeline = root.createDiv({ cls: "task-timeline-main" });
 
-      const list = this.contentEl.createEl("ul");
+    sidebar.createEl("div", {
+      cls: "task-timeline-sidebar-header",
+      text: "Tasks",
+    });
+    timeline.createEl("div", {
+      cls: "task-timeline-header",
+      text: "Timeline",
+    });
 
-      for (const task of tasksOnDate) {
-        const status = task.done ? "done" : "todo";
-        const timeLabel = task.time === undefined ? "" : ` ${task.time}`;
-        list.createEl("li", {
-          text: `[${status}]${timeLabel} [${task.dateKind}]: ${task.text} (${task.path}:${task.line})`,
-        });
-      }
+    for (const task of datedTasks) {
+      const sidebarRow = sidebar.createDiv({
+        cls: "task-timeline-sidebar-row",
+      });
+      sidebarRow.createEl("span", { text: task.text });
+
+      const timelineRow = timeline.createDiv({ cls: "task-timeline-row" });
+      timelineRow.createEl("div", {
+        cls: "task-timeline-bar",
+        text: task.time === undefined ? task.date : `${task.date} ${task.time}`,
+      });
     }
   }
 
