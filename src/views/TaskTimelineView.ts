@@ -232,6 +232,14 @@ export class TaskTimelineView extends ItemView {
     });
     minor.style.width = `${timelineWidth}px`;
     renderTickRow(minor, header.minor, dayWidth);
+
+    if (header.sub !== undefined && header.sub.length > 0) {
+      const sub = headerEl.createDiv({
+        cls: "task-timeline-header-row task-timeline-header-sub",
+      });
+      sub.style.width = `${timelineWidth}px`;
+      renderTickRow(sub, header.sub, dayWidth);
+    }
   }
 
   private async openTask(task: DatedTask): Promise<void> {

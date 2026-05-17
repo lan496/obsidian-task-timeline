@@ -9,7 +9,7 @@
 }
 
 .task-timeline-zoom-btn {
-  padding: 4px 10px;
+  padding: 4px 12px;
   border: 1px solid var(--background-modifier-border);
   border-radius: 4px;
   background: var(--background-secondary);
@@ -22,6 +22,8 @@
   background: var(--interactive-accent);
   color: var(--text-on-accent);
   border-color: var(--interactive-accent);
+  font-weight: 600;
+  box-shadow: 0 0 0 1px var(--interactive-accent);
 }
 
 .task-timeline-main {
@@ -47,8 +49,10 @@
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  height: 24px;
+  flex-shrink: 0;
+  min-height: 24px;
   border-bottom: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
 }
 
 .task-timeline-header-row:last-child {
@@ -57,19 +61,40 @@
 
 .task-timeline-header-cell {
   flex: 0 0 auto;
-  height: 100%;
+  display: flex;
+  align-items: center;
   padding: 4px 8px;
   border-right: 1px solid var(--background-modifier-border);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 11px;
+  color: var(--text-normal);
   box-sizing: border-box;
+}
+
+.task-timeline-header-major {
+  min-height: 26px;
 }
 
 .task-timeline-header-major .task-timeline-header-cell {
   font-weight: 600;
   background: var(--background-secondary);
+  font-size: 12px;
+}
+
+.task-timeline-header-minor .task-timeline-header-cell {
+  font-weight: 500;
+}
+
+.task-timeline-header-sub {
+  min-height: 20px;
+}
+
+.task-timeline-header-sub .task-timeline-header-cell {
+  color: var(--text-muted);
+  font-size: 10px;
+  background: var(--background-primary);
 }
 
 .task-timeline-body {

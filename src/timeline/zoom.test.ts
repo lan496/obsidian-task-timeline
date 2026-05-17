@@ -31,6 +31,8 @@ describe("getHeader", () => {
     const header = getHeader("2025-02-10", "2025-11-20", "quarter");
     expect(header.minor.map((t) => t.label)).toEqual(["Q1", "Q2", "Q3", "Q4"]);
     expect(header.major.map((t) => t.label)).toEqual(["2025"]);
+    expect(header.sub).toBeDefined();
+    expect(header.sub!.length).toBeGreaterThan(0);
   });
 
   it("returns year ticks with decade as major", () => {
@@ -47,5 +49,17 @@ describe("getHeader", () => {
     const header = getHeader("2025-05-19", "2025-06-01", "week");
     expect(header.minor.length).toBeGreaterThan(0);
     expect(header.minor[0]!.label).toBe("05-19");
+  });
+
+  it("includes week sub-ticks at Month zoom", () => {
+    const header = getHeader("2025-05-01", "2025-05-31", "month");
+    expect(header.sub).toBeDefined();
+    expect(header.sub!.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it("includes quarter sub-ticks at Year zoom", () => {
+    const header = getHeader("2025-01-01", "2025-12-31", "year");
+    expect(header.sub).toBeDefined();
+    expect(header.sub!.map((t) => t.label)).toEqual(["Q1", "Q2", "Q3", "Q4"]);
   });
 });

@@ -1,6 +1,7 @@
 import { addDays, diffDays, parseDateOnly } from "./dateMath";
 
 export type ZoomLevel = "day" | "week" | "month" | "quarter" | "year";
+export type WeekStart = "mon" | "sun";
 
 export const ZOOM_LEVELS: readonly ZoomLevel[] = [
   "day",
@@ -27,6 +28,10 @@ export interface Tick {
 export interface Header {
   major: Tick[];
   minor: Tick[];
+  // Optional finer ticks shown beneath the minor row at higher zoom
+  // levels so the user can still see week / month / quarter boundaries
+  // when zoomed out.
+  sub?: Tick[];
 }
 
 const MONTH_LABELS = [
@@ -71,13 +76,10 @@ function startOfDecade(iso: string): string {
   return `${year - (year % 10)}-01-01`;
 }
 
-export type WeekStart = "mon" | "sun";
-
 function startOfWeek(iso: string, weekStart: WeekStart): string {
   const d = parseDateOnly(iso);
   const day = d.getUTCDay();
-  const offset =
-    weekStart === "mon" ? (day === 0 ? -6 : 1 - day) : -day;
+  const offset = weekStart === "mon" ? (day === 0 ? -6 : 1 - day) : -day;
   return addDays(iso, offset);
 }
 
@@ -160,6 +162,74 @@ function quarterMinor(iso: string): string {
   return `Q${Math.floor((month - 1) / 3) + 1}`;
 }
 
+function monthTicks(start: string, end: string): Tick[] {
+  return buildTicks(
+    start,
+    end,
+    startOfMonth(start),
+    (iso) => addMonths(iso, 1),
+    monthLabel
+  );
+}
+
+function yearTicks(start: string, end: string): Tick[] {
+  return buildTicks(
+    start,
+    end,
+    startOfYear(start),
+    (iso) => addYears(iso, 1),
+    yearLabel
+  );
+}
+
+function decadeTicks(start: string, end: string): Tick[] {
+  return buildTicks(
+    start,
+    end,
+    startOfDecade(start),
+    (iso) => addYears(iso, 10),
+    decadeLabel
+  );
+}
+
+function dayTicks(start: string, end: string): Tick[] {
+  return buildTicks(start, end, start, (iso) => addDays(iso, 1), dayMinor);
+}
+
+function weekTicks(
+  start: string,
+  end: string,
+  weekStart: WeekStart
+): Tick[] {
+  return buildTicks(
+    start,
+    end,
+    startOfWeek(start, weekStart),
+    (iso) => addDays(iso, 7),
+    weekMinor
+  );
+}
+
+function monthMinorTicks(start: string, end: string): Tick[] {
+  return buildTicks(
+    start,
+    end,
+    startOfMonth(start),
+    (iso) => addMonths(iso, 1),
+    monthMinor
+  );
+}
+
+function quarterShortTicks(start: string, end: string): Tick[] {
+  return buildTicks(
+    start,
+    end,
+    startOfQuarter(start),
+    (iso) => addMonths(iso, 3),
+    quarterMinor
+  );
+}
+
 export function getHeader(
   start: string,
   end: string,
@@ -167,94 +237,33 @@ export function getHeader(
   weekStart: WeekStart = "mon"
 ): Header {
   switch (level) {
-    case "day": {
-      const minor = buildTicks(
-        start,
-        end,
-        start,
-        (iso) => addDays(iso, 1),
-        dayMinor
-      );
-      const major = buildTicks(
-        start,
-        end,
-        startOfMonth(start),
-        (iso) => addMonths(iso, 1),
-        monthLabel
-      );
-      return { major, minor };
-    }
-    case "week": {
-      const minor = buildTicks(
-        start,
-        end,
-        startOfWeek(start, weekStart),
-        (iso) => addDays(iso, 7),
-        weekMinor
-      );
-      const major = buildTicks(
-        start,
-        end,
-        startOfMonth(start),
-        (iso) => addMonths(iso, 1),
-        monthLabel
-      );
-      return { major, minor };
-    }
-    case "month": {
-      const minor = buildTicks(
-        start,
-        end,
-        startOfMonth(start),
-        (iso) => addMonths(iso, 1),
-        monthMinor
-      );
-      const major = buildTicks(
-        start,
-        end,
-        startOfYear(start),
-        (iso) => addYears(iso, 1),
-        yearLabel
-      );
-      return { major, minor };
-    }
-    case "quarter": {
-      const minor = buildTicks(
-        start,
-        end,
-        startOfQuarter(start),
-        (iso) => addMonths(iso, 3),
-        quarterMinor
-      );
-      const major = buildTicks(
-        start,
-        end,
-        startOfYear(start),
-        (iso) => addYears(iso, 1),
-        yearLabel
-      );
-      return { major, minor };
-    }
-    case "year": {
-      const minor = buildTicks(
-        start,
-        end,
-        startOfYear(start),
-        (iso) => addYears(iso, 1),
-        yearLabel
-      );
-      const major = buildTicks(
-        start,
-        end,
-        startOfDecade(start),
-        (iso) => addYears(iso, 10),
-        decadeLabel
-      );
-      return { major, minor };
-    }
+    case "day":
+      return {
+        major: monthTicks(start, end),
+        minor: dayTicks(start, end),
+      };
+    case "week":
+      return {
+        major: monthTicks(start, end),
+        minor: weekTicks(start, end, weekStart),
+      };
+    case "month":
+      return {
+        major: yearTicks(start, end),
+        minor: monthMinorTicks(start, end),
+        sub: weekTicks(start, end, weekStart),
+      };
+    case "quarter":
+      return {
+        major: yearTicks(start, end),
+        minor: quarterShortTicks(start, end),
+        sub: monthMinorTicks(start, end),
+      };
+    case "year":
+      return {
+        major: decadeTicks(start, end),
+        minor: yearTicks(start, end),
+        sub: quarterShortTicks(start, end),
+      };
   }
-}
-
-export function quarterStart(iso: string): string {
-  return startOfQuarter(iso);
 }
