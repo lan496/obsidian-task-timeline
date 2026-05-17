@@ -149,3 +149,21 @@
   color: var(--text-muted);
   text-decoration: line-through;
 }
+
+.task-timeline-bar-inline-label {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-on-accent);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.task-timeline-bar-inline-label.is-done {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}

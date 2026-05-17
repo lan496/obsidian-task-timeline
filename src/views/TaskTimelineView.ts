@@ -21,6 +21,11 @@ const DRAG_THRESHOLD_PX = 4;
 const ZOOM_STEP = 1.15;
 const MIN_ZOOM_FACTOR = 0.25;
 const MAX_ZOOM_FACTOR = 8;
+// Rough average glyph width at the bar font-size. Used only to decide
+// whether a label fits inside the bar; the worst case (overestimate) is
+// the label falls back to rendering outside, which is still readable.
+const INLINE_LABEL_CHAR_PX = 7;
+const INLINE_LABEL_PADDING_PX = 16;
 
 export interface SettingsView {
   settings: TaskTimelineSettings;
@@ -224,6 +229,9 @@ export class TaskTimelineView extends ItemView {
       const left = offsetDays * dayWidth;
       const width = Math.max(durationDays * dayWidth - BAR_GAP_PX, MIN_BAR_PX);
       const tooltip = `${task.label} (${task.hostPath}:${task.hostLine})`;
+      const text = barText(task);
+      const inlineFits =
+        width >= text.length * INLINE_LABEL_CHAR_PX + INLINE_LABEL_PADDING_PX;
 
       const bar = row.createEl("div", {
         cls: task.done ? "task-timeline-bar is-done" : "task-timeline-bar",
@@ -235,17 +243,26 @@ export class TaskTimelineView extends ItemView {
         void this.openTask(task);
       });
 
-      const label = row.createEl("div", {
-        cls: task.done
-          ? "task-timeline-bar-label is-done"
-          : "task-timeline-bar-label",
-        text: barText(task),
-      });
-      label.style.left = `${left + width + 4}px`;
-      label.title = tooltip;
-      label.addEventListener("click", () => {
-        void this.openTask(task);
-      });
+      if (inlineFits) {
+        bar.createSpan({
+          cls: task.done
+            ? "task-timeline-bar-inline-label is-done"
+            : "task-timeline-bar-inline-label",
+          text,
+        });
+      } else {
+        const label = row.createEl("div", {
+          cls: task.done
+            ? "task-timeline-bar-label is-done"
+            : "task-timeline-bar-label",
+          text,
+        });
+        label.style.left = `${left + width + 4}px`;
+        label.title = tooltip;
+        label.addEventListener("click", () => {
+          void this.openTask(task);
+        });
+      }
     }
   }
 
