@@ -1,6 +1,10 @@
-import { App, Plugin, PluginSettingTab, Setting } from "obsidian";
+import { App, normalizePath, Plugin, PluginSettingTab, Setting } from "obsidian";
 import { DEFAULT_DAY_WIDTH, ZOOM_LEVELS, ZoomLevel } from "../timeline/zoom";
 import { parseFolderList, TaskTimelineSettings, WeekStart } from "./types";
+
+function parseFolderPathList(value: string): string[] {
+  return parseFolderList(value).map((entry) => normalizePath(entry));
+}
 
 export interface SettingsHost extends Plugin {
   settings: TaskTimelineSettings;
@@ -30,7 +34,7 @@ export class TaskTimelineSettingsTab extends PluginSettingTab {
           .setPlaceholder("Projects, notes/plans")
           .setValue(this.host.settings.includeFolders.join(", "))
           .onChange(async (value) => {
-            this.host.settings.includeFolders = parseFolderList(value);
+            this.host.settings.includeFolders = parseFolderPathList(value);
             await this.host.saveSettings();
             this.host.onSettingsChanged();
           })
@@ -44,7 +48,7 @@ export class TaskTimelineSettingsTab extends PluginSettingTab {
           .setPlaceholder("Archive, templates")
           .setValue(this.host.settings.excludeFolders.join(", "))
           .onChange(async (value) => {
-            this.host.settings.excludeFolders = parseFolderList(value);
+            this.host.settings.excludeFolders = parseFolderPathList(value);
             await this.host.saveSettings();
             this.host.onSettingsChanged();
           })
