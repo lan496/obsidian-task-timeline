@@ -7,6 +7,11 @@ import {
 } from "./settings/types";
 import { TaskStore } from "./store/TaskStore";
 import {
+  DEFAULT_DAY_WIDTH,
+  ZOOM_LEVELS,
+  ZoomLevel,
+} from "./timeline/zoom";
+import {
   TaskTimelineView,
   VIEW_TYPE_TASK_TIMELINE,
 } from "./views/TaskTimelineView";
@@ -20,6 +25,7 @@ export default class TaskTimelinePlugin extends Plugin {
       ...DEFAULT_SETTINGS,
       ...((await this.loadData()) as Partial<TaskTimelineSettings> | null),
     };
+    this.migrateLegacySettings();
     this.taskStore = new TaskStore(this.app);
     this.applyPathFilter();
 
@@ -80,6 +86,25 @@ export default class TaskTimelinePlugin extends Plugin {
   onSettingsChanged(): void {
     this.applyPathFilter();
     void this.taskStore.initialize();
+  }
+
+  // Earlier builds supported "day" / "week" zoom levels. Coerce any
+  // persisted value that's no longer in `ZOOM_LEVELS` to a sensible
+  // default and trim stale per-level day-width overrides.
+  private migrateLegacySettings(): void {
+    const validLevels = new Set<string>(ZOOM_LEVELS);
+    if (!validLevels.has(this.settings.defaultZoom)) {
+      this.settings.defaultZoom = DEFAULT_SETTINGS.defaultZoom;
+    }
+    const widths: Record<string, number> = {};
+    for (const level of ZOOM_LEVELS) {
+      const value =
+        (this.settings.dayWidths as Record<string, number | undefined>)[
+          level
+        ] ?? DEFAULT_DAY_WIDTH[level];
+      widths[level] = value;
+    }
+    this.settings.dayWidths = widths as Record<ZoomLevel, number>;
   }
 
   private applyPathFilter(): void {

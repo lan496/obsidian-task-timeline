@@ -13,7 +13,7 @@ export interface TaskTimelineSettings {
 export const DEFAULT_SETTINGS: TaskTimelineSettings = {
   includeFolders: [],
   excludeFolders: [],
-  defaultZoom: "week",
+  defaultZoom: "month",
   dayWidths: { ...DEFAULT_DAY_WIDTH },
   weekStart: "mon",
 };

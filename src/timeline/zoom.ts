@@ -1,19 +1,11 @@
 import { addDays, diffDays, parseDateOnly } from "./dateMath";
 
-export type ZoomLevel = "day" | "week" | "month" | "quarter" | "year";
+export type ZoomLevel = "month" | "quarter" | "year";
 export type WeekStart = "mon" | "sun";
 
-export const ZOOM_LEVELS: readonly ZoomLevel[] = [
-  "day",
-  "week",
-  "month",
-  "quarter",
-  "year",
-];
+export const ZOOM_LEVELS: readonly ZoomLevel[] = ["month", "quarter", "year"];
 
 export const DEFAULT_DAY_WIDTH: Record<ZoomLevel, number> = {
-  day: 96,
-  week: 24,
   month: 6,
   quarter: 2,
   year: 1,
@@ -133,20 +125,12 @@ function buildTicks(
   return ticks;
 }
 
-function monthLabel(iso: string): string {
-  return `${MONTH_LABELS[Number(iso.slice(5, 7)) - 1]} ${iso.slice(0, 4)}`;
-}
-
 function yearLabel(iso: string): string {
   return iso.slice(0, 4);
 }
 
 function decadeLabel(iso: string): string {
   return `${iso.slice(0, 3)}0s`;
-}
-
-function dayMinor(iso: string): string {
-  return iso.slice(5);
 }
 
 function weekMinor(iso: string): string {
@@ -160,16 +144,6 @@ function monthMinor(iso: string): string {
 function quarterMinor(iso: string): string {
   const month = Number(iso.slice(5, 7));
   return `Q${Math.floor((month - 1) / 3) + 1}`;
-}
-
-function monthTicks(start: string, end: string): Tick[] {
-  return buildTicks(
-    start,
-    end,
-    startOfMonth(start),
-    (iso) => addMonths(iso, 1),
-    monthLabel
-  );
 }
 
 function yearTicks(start: string, end: string): Tick[] {
@@ -190,10 +164,6 @@ function decadeTicks(start: string, end: string): Tick[] {
     (iso) => addYears(iso, 10),
     decadeLabel
   );
-}
-
-function dayTicks(start: string, end: string): Tick[] {
-  return buildTicks(start, end, start, (iso) => addDays(iso, 1), dayMinor);
 }
 
 function weekTicks(
@@ -237,16 +207,6 @@ export function getHeader(
   weekStart: WeekStart = "mon"
 ): Header {
   switch (level) {
-    case "day":
-      return {
-        major: monthTicks(start, end),
-        minor: dayTicks(start, end),
-      };
-    case "week":
-      return {
-        major: monthTicks(start, end),
-        minor: weekTicks(start, end, weekStart),
-      };
     case "month":
       return {
         major: yearTicks(start, end),
