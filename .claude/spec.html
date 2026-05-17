@@ -158,35 +158,24 @@
   <ol>
     <li><a href="#goals">Goals</a></li>
     <li><a href="#non-goals">Non-goals (for v1)</a></li>
-    <li><a href="#user-facing-behavior">User-facing behavior</a>
-      <ol>
-        <li><a href="#opening-the-view">Opening the view</a></li>
-        <li><a href="#layout">Layout</a></li>
-        <li><a href="#date-axis">Date axis (zoom levels)</a></li>
-        <li><a href="#settings">Settings</a></li>
-      </ol>
-    </li>
     <li><a href="#data-model">Data model</a>
       <ol>
         <li><a href="#source-of-truth">Source of truth</a></li>
         <li><a href="#task-forms">Task forms</a></li>
         <li><a href="#task-syntax">Task syntax</a></li>
         <li><a href="#date-ranges">Date ranges</a></li>
-        <li><a href="#internal-types">Internal types (sketch)</a></li>
+        <li><a href="#internal-types">Internal types</a></li>
       </ol>
     </li>
     <li><a href="#open-questions">Open questions</a></li>
   </ol>
-  <p style="margin-top:24px;font-size:13px;"><a href="./implementation.html">&rarr; Implementation</a></p>
 </nav>
 
 <main>
 <h1>Task Timeline - Spec <span class="pill">v1</span></h1>
-<p class="subtitle">An Obsidian plugin that renders Markdown tasks across the vault as a horizontal timeline view.</p>
+<p class="subtitle">Design reference for the Markdown parser and data model behind the timeline view.</p>
 
-<p>Each task is a bar positioned on a date axis; the sidebar lists the tasks aligned to their bars.</p>
-
-<p>This document is the <strong>product spec</strong> (what to build). The companion doc <a href="./implementation.html">Implementation</a> covers architecture, rendering, and the phased rollout.</p>
+<p>End-user behavior (how to open the view, settings, interaction model, example tasks) lives in the project <a href="../README.md">README</a>. This document is the <strong>internal spec</strong> for what the parser must accept, the precedence rules between syntaxes, and the shape of the parsed task records.</p>
 
 <h2 id="goals">Goals</h2>
 <ul>
@@ -206,61 +195,6 @@
   <li>Mobile-first layout. Desktop is the primary target; the view should still open on mobile but is not tuned for narrow screens.</li>
 </ul>
 
-<h2 id="user-facing-behavior">User-facing behavior</h2>
-
-<h3 id="opening-the-view">Opening the view</h3>
-<ul>
-  <li>Command palette: <code>Task Timeline: Open view</code>.</li>
-  <li>Ribbon icon (calendar) opens the same view in the right sidebar leaf.</li>
-  <li>The view is registered as a workspace view type, so it survives reloads and can be pinned like any other Obsidian pane.</li>
-</ul>
-
-<h3 id="layout">Layout</h3>
-<pre><code>+----------------------+--------------------------------------------------+
-| Sidebar (tasks)      | Date axis: 05-15 | 05-16 | 05-17 | 05-18 | ...   |
-+----------------------+--------------------------------------------------+
-| - Write design doc   |        [=======]                                 |
-| - Ship v0.1          |                    [===]                         |
-| - Review PR #12      |                          [============]          |
-+----------------------+--------------------------------------------------+</code></pre>
-<ul>
-  <li>Left sidebar: one row per task. The label is either the checkbox text (inline task) or the linked page's title / alias (linked-page task). A small source hint underneath shows the file that contains the checkbox.</li>
-  <li>Right pane: a horizontally scrollable date axis. Each task row contains one bar spanning <code>[start, due]</code> when a start date is given, or a single-day bar on the due date otherwise.</li>
-  <li>Rows in the sidebar and the timeline are vertically aligned 1:1.</li>
-  <li>Done tasks (<code>[x]</code>) render with a muted style; open tasks are emphasized.</li>
-  <li>Clicking a bar opens the linked page for a linked-page task, or the checkbox line for an inline task.</li>
-</ul>
-
-<h3 id="date-axis">Date axis (zoom levels)</h3>
-<p>The axis granularity is user-selectable from a toolbar above the timeline, with options for day / week / month / quarter / year. The choice is persisted in plugin settings (default: <strong>Week</strong>).</p>
-<p>Each level controls two things: the <strong>tick label cadence</strong> drawn in the header, and the <strong>pixel width of one day</strong> in the underlying coordinate space. The coordinate space stays per-day at every zoom level so that bars always line up exactly with the calendar - wider levels just shrink each day until many days share a single label.</p>
-<table>
-  <thead><tr><th>Level</th><th>Tick label cadence</th><th>Default day width</th><th>Notes</th></tr></thead>
-  <tbody>
-    <tr><td>Day</td><td>every day (<code>Mon 05-17</code>)</td><td>96 px</td><td>Useful for sub-week ranges and dense task lists.</td></tr>
-    <tr><td>Week</td><td>every Monday (<code>Wk 21 - 05-19</code>)</td><td>24 px</td><td>Default. Roughly one quarter fits on a 1440 px screen.</td></tr>
-    <tr><td>Month</td><td>first of each month (<code>May 2025</code>)</td><td>6 px</td><td>Calendar months as the visual unit.</td></tr>
-    <tr><td>Quarter</td><td>first of Jan/Apr/Jul/Oct (<code>Q2 2025</code>)</td><td>2 px</td><td>Multi-year planning view; bars become thin strips.</td></tr>
-    <tr><td>Year</td><td>January 1 (<code>2025</code>)</td><td>1 px</td><td>Full multi-year overview; bars are hairlines.</td></tr>
-  </tbody>
-</table>
-<ul>
-  <li>The "day width" column is the <strong>default</strong>; the user can override it per-level in settings (e.g. bump Year from 1 px to 2 px on a wide monitor). Day width persists separately per zoom level.</li>
-  <li>The week boundary is configurable (Mon/Sun) and respects Obsidian's global "Start of week" setting when set.</li>
-  <li>Quarters use the calendar year (Jan-Mar = Q1). Fiscal-year offsets are out of scope for v1.</li>
-  <li>The axis header is rendered as a sticky two-row strip when a higher-level label spans multiple ticks: e.g. at Week zoom, the top row shows the month label and the bottom row shows the week number; at Quarter zoom, the top row shows the year and the bottom row shows the quarter.</li>
-  <li>Switching zoom levels preserves the date currently under the viewport's horizontal midpoint, so the user does not lose their position when changing granularity.</li>
-</ul>
-
-<h3 id="settings">Settings</h3>
-<ul>
-  <li>Folders to include / exclude (glob-style).</li>
-  <li>Date conventions to recognize (see <em>Data model</em>).</li>
-  <li>Default zoom level (Day / Week / Month / Quarter / Year).</li>
-  <li>Per-level day width overrides.</li>
-  <li>Start of week (Mon / Sun, falls back to Obsidian's global setting).</li>
-</ul>
-
 <h2 id="data-model">Data model</h2>
 
 <h3 id="source-of-truth">Source of truth</h3>
@@ -268,47 +202,31 @@
 
 <h3 id="task-forms">Task forms</h3>
 <p>Both forms below are first-class. The form a line takes determines where its <strong>label</strong> comes from and where its <strong>dates</strong> come from; neither is preferred over the other.</p>
-
-<h4>Inline task</h4>
-<pre><code>- [ ] Write design doc :date: 2025-05-17 - 2025-05-20
-- [ ] Ship v0.1 (@2025-05-25)</code></pre>
-<ul>
-  <li><strong>Label</strong>: the text following the checkbox, with date tokens stripped. The bar shows that text as-is.</li>
-  <li><strong>Dates</strong>: read from the inline date markers in the checkbox text (see <a href="#task-syntax">Task syntax</a> below). A range is two dates joined by <code> - </code> (space-dash-space).</li>
-  <li><strong>Jump target</strong>: clicking the bar opens the host file and scrolls to the checkbox line.</li>
-</ul>
-
-<h4>Linked-page task</h4>
-<pre><code>- [ ] [[Plan launch]]
-- [ ] [[Q3 roadmap|Roadmap]]</code></pre>
-<p>A linked-page task is a checkbox whose body is a single <code>[[wiki link]]</code>, following obsidian-kanban's linked-card convention.</p>
-<ul>
-  <li><strong>Label</strong>: the linked page's title (or its alias if <code>[[Page|Alias]]</code> is used).</li>
-  <li><strong>Dates</strong>: read from the linked page's <a href="https://help.obsidian.md/Editing+and+formatting/Properties">note properties</a> (frontmatter), looking at the keys <code>due</code> and <code>start</code>. Both must be <code>YYYY-MM-DD</code> strings.</li>
-  <li><strong>Jump target</strong>: clicking the bar opens the linked page; a smaller source hint in the sidebar still links to the checkbox line.</li>
-</ul>
-<p>Example linked page (<code>Plan launch.md</code>):</p>
-<pre><code>---
-due: 2025-05-20
-start: 2025-05-15
----
-
-Notes about the launch...</code></pre>
-<p>The plugin finds the checkbox <code>- [ ] [[Plan launch]]</code>, resolves the wiki link, reads the properties, and renders a bar labelled "Plan launch" from <code>2025-05-15</code> to <code>2025-05-20</code>.</p>
-
-<h4>Mixed cases</h4>
+<table>
+  <thead><tr><th>Form</th><th>Label source</th><th>Date source</th><th>Click target</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Inline</strong><br><code>- [ ] text + marker</code></td>
+      <td>checkbox text, with the date marker stripped</td>
+      <td>the inline date marker (see <a href="#task-syntax">Task syntax</a>)</td>
+      <td>the host file, scrolled to the checkbox line</td>
+    </tr>
+    <tr>
+      <td><strong>Linked-page</strong><br><code>- [ ] [[Page]]</code> (the body is a single wiki link, nothing else)</td>
+      <td>page title, or the alias when <code>[[Page|Alias]]</code> is used</td>
+      <td>the linked page's <code>start</code> / <code>due</code> frontmatter properties (<code>YYYY-MM-DD</code>)</td>
+      <td>the linked page</td>
+    </tr>
+  </tbody>
+</table>
+<p>Mixed cases:</p>
 <ul>
   <li>If the checkbox body contains a wiki link <em>and</em> other text, it is treated as an inline task (the link becomes part of the label, and dates come from inline markers on that line).</li>
   <li>An inline task with no due-date marker is skipped. A linked-page task whose target page has no <code>due</code> property is also skipped.</li>
 </ul>
 
 <h3 id="task-syntax">Task syntax</h3>
-<p>A task is any list item matching <code>^\s*[-*]\s+\[( |x|X)\]\s+(.*)$</code>. Date resolution depends on the task form (see <a href="#task-forms">Task forms</a>):</p>
-<ul>
-  <li><strong>Linked-page task</strong>: dates come from the linked page's <code>due</code> / <code>start</code> note properties.</li>
-  <li><strong>Inline task</strong>: dates come from inline markers in the checkbox text, described below.</li>
-</ul>
-<p>An inline task carries one date marker, in one of the three forms below. Each form accepts either a single date (a point-in-time task) or two dates joined by <code> - </code> (a range, <code>start - due</code>). A task without a recognized marker is skipped.</p>
+<p>A task is any list item matching <code>^\s*[-*]\s+\[( |x|X)\]\s+(.*)$</code>. Inline tasks carry one date marker, in one of the three forms below. Each form accepts either a single date (a point-in-time task) or two dates joined by <code> - </code> (a range, <code>start - due</code>).</p>
 <p>The single-date forms are taken verbatim from the upstream plugins; the table cites the exact spec page that defines each one. The two-date variant is a Timeline extension on top of the same marker.</p>
 <table>
   <thead><tr><th>Source plugin</th><th>Single date</th><th>Range</th><th>Reference</th></tr></thead>
@@ -323,21 +241,16 @@ Notes about the launch...</code></pre>
 <p>A task with no recognized due date is skipped entirely. When a task carries more than one due-date marker, <em>first-match-wins</em> in the table order - the Reminder-native form is preferred over the Tasks-style emoji, which is preferred over the Kanban form.</p>
 
 <h3 id="date-ranges">Date ranges</h3>
-<p>A range is two ISO dates joined by <code> - </code> (space-dash-space) inside any of the three marker forms above:</p>
-<pre><code>- [ ] Write design doc :date: 2025-05-17 - 2025-05-20
-- [ ] Ship v0.1 (@2025-05-18 - 2025-05-25)
-- [ ] Review PR #12 @{2025-05-19 - 2025-05-21}</code></pre>
-<p>(<code>:date:</code> is the Tasks-plugin due emoji <code>U+1F4C5</code>; it is matched literally.)</p>
-<p>Rules:</p>
+<p>A range is two ISO dates joined by <code> - </code> (space-dash-space) inside any of the three marker forms above. Rules:</p>
 <ul>
   <li>The first date is the <strong>start</strong>; the second is the <strong>due date</strong>.</li>
   <li>Both dates use the same <code>YYYY-MM-DD</code> form.</li>
   <li>The dash separator must be surrounded by whitespace (<code>YYYY-MM-DD - YYYY-MM-DD</code>) so it cannot be confused with the dashes inside an ISO date.</li>
-  <li>If <code>start &gt; due</code>, the task is treated as a single-day bar on the due date and a warning is logged once per parse.</li>
+  <li>If <code>start &gt; due</code>, the task is treated as a single-day bar on the due date.</li>
 </ul>
 <p>The range form is a Timeline-specific extension on top of the upstream single-date markers; the Reminder plugin will treat the second date inside its bracket as plain text, and similarly for Kanban. That is acceptable: the upstream plugins keep firing on the first date as a reminder/due-date anchor, while Timeline reads the full range.</p>
 
-<h3 id="internal-types">Internal types (sketch)</h3>
+<h3 id="internal-types">Internal types</h3>
 <pre><code>type DueDateSource =
   | 'page-property'      // from the linked page's `due` frontmatter
   | 'reminder'           // inline `(@YYYY-MM-DD ...)`
@@ -352,13 +265,14 @@ interface ParsedTask {
   hostPath: string;      // vault-relative path of the file containing the checkbox
   hostLine: number;      // 1-indexed line of the checkbox
   pagePath?: string;     // resolved path of the linked page (linked-page form only)
+  column?: string;       // most recent Markdown heading above the checkbox
   done: boolean;
   due?: string;          // YYYY-MM-DD; required to appear on timeline
   start?: string;        // YYYY-MM-DD; absent for single-day tasks
   dueSource?: DueDateSource;
 }</code></pre>
 <p>A task with <code>due</code> is considered "dated". When <code>start</code> is present and <code>start &lt;= due</code>, the bar spans <code>[start, due]</code> inclusive; otherwise the bar is a single day on <code>due</code>. All date math operates on calendar days; time-of-day in the source markup is ignored.</p>
-<p><code>hostPath:hostLine</code> always points at the checkbox. For an inline task, clicking the bar jumps there. For a linked-page task, <code>pagePath</code> is the resolved target of the wiki link; clicking the bar opens the page, and the row's source hint still links to <code>hostPath:hostLine</code>.</p>
+<p><code>hostPath:hostLine</code> always points at the checkbox. For an inline task, clicking the bar jumps there. For a linked-page task, <code>pagePath</code> is the resolved target of the wiki link; clicking the bar opens the page. The <code>column</code> field records the most recent Markdown heading above the checkbox so the view can group / filter / color kanban-style boards.</p>
 
 <h2 id="open-questions">Open questions</h2>
 <ul>
