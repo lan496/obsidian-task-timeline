@@ -11,13 +11,35 @@ axis, so you can see what's due, what overlaps, and what's coming up.
 
 ## Install
 
-Not yet in the community plugin store. To install manually:
+Not yet in the community plugin store. Two options:
+
+### Scripted (recommended)
+
+Requires Node 18+. Download `install-release.mjs` from the
+[latest release](https://github.com/lan496/obsidian-task-timeline/releases/latest)
+and run:
+
+```sh
+node install-release.mjs --vault /path/to/your/vault
+```
+
+That downloads `main.js`, `manifest.json`, and `styles.css` from the
+latest GitHub release and writes them to
+`<vault>/.obsidian/plugins/obsidian-task-timeline/`. Pin a version
+with `--version 0.1.1`, or skip the `.obsidian/plugins/...` prefix
+and write straight to a directory with `--to <plugin-dir>`.
+
+From a clone of this repo the same script is available as
+`npm run install-release -- --vault /path/to/your/vault`.
+
+### Manual
 
 1. Download `main.js`, `styles.css`, and `manifest.json` from the
    latest release.
 2. Copy them into `<your-vault>/.obsidian/plugins/obsidian-task-timeline/`.
-3. In Obsidian, open **Settings → Community plugins**, reload the list,
-   and enable **Task Timeline**.
+
+Either way, finish by opening **Settings → Community plugins** in
+Obsidian, reloading the list, and enabling **Task Timeline**.
 
 ## Open the view
 
@@ -63,6 +85,25 @@ date.
 - [ ] Review PR @{2025-05-19 - 2025-05-21}
 ```
 
+For the kanban form you can also write two separate `@{...}` markers
+joined by ` - `:
+
+```markdown
+- [ ] Sprint @{2025-05-19} - @{2025-05-21}
+```
+
+### Loose date formats
+
+Month and day may omit the leading zero. A month-only date expands to
+the full month (start = first day, due = last day), which is useful
+for marking approximate windows.
+
+```markdown
+- [ ] Pin to April @{2026-4}
+- [ ] Q2 push @{2026-4 - 2026-6}
+- [ ] Single day (@2026-4-1)
+```
+
 ### Linked-page tasks
 
 Instead of writing the title inline, you can point the checkbox at a
@@ -89,11 +130,12 @@ Done tasks (`[x]`) are hidden by default.
 
 ### Bar colors
 
-Bars are colored deterministically:
+Bars are colored deterministically, in this order of preference:
 
-- Tasks parsed from a `@{...}` (kanban) marker take their color from
-  the most recent Markdown heading above them — useful for visually
-  grouping kanban columns.
+- If the task body contains any `#tag`, the bar is colored by the
+  first tag — so tasks sharing a tag share a color.
+- Otherwise, tasks parsed from a `@{...}` (kanban) marker take their
+  color from the most recent Markdown heading above them.
 - Linked-page tasks are colored by the linked page.
 - Everything else is colored by the file the task lives in.
 

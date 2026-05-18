@@ -13,7 +13,8 @@
     "test": "vitest run",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "copy-assets": "node scripts/copy-assets.mjs"
+    "copy-assets": "node scripts/copy-assets.mjs",
+    "install-release": "node scripts/install-release.mjs"
   },
   "keywords": [],
   "license": "0-BSD",

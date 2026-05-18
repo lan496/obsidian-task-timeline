@@ -25,6 +25,9 @@ export interface ParsedTask {
   due?: string;
   start?: string;
   dueSource?: DueDateSource;
+  // Obsidian-style #tags discovered in the task body, in the order they
+  // first appeared. Drives bar color when present.
+  tags?: string[];
 }
 
 export interface DatedTask extends ParsedTask {
