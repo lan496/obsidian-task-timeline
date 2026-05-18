@@ -50,4 +50,5 @@ jobs:
             main.js
             manifest.json
             styles.css
+            scripts/install-release.mjs
           fail_on_unmatched_files: true
