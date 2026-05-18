@@ -263,3 +263,109 @@ describe("parseTasks: linked-page form", () => {
     expect(task.pagePath).toBe("Page");
   });
 });
+
+describe("parseTasks: loose date formats", () => {
+  it("accepts unpadded month and day in reminder syntax", () => {
+    const task = only(parseTasks(doc("- [ ] T (@2026-4-1)")));
+    expect(task.due).toBe("2026-04-01");
+    expect(task.start).toBeUndefined();
+  });
+
+  it("accepts unpadded month in tasks-emoji syntax", () => {
+    const task = only(parseTasks(doc("- [ ] T \u{1F4C5} 2026-4-1")));
+    expect(task.due).toBe("2026-04-01");
+  });
+
+  it("accepts unpadded month and day in kanban syntax", () => {
+    const task = only(parseTasks(doc("- [ ] T @{2026-4-1}")));
+    expect(task.due).toBe("2026-04-01");
+  });
+
+  it("expands a month-only single date into a month-long range", () => {
+    const task = only(parseTasks(doc("- [ ] T @{2026-4}")));
+    expect(task.start).toBe("2026-04-01");
+    expect(task.due).toBe("2026-04-30");
+  });
+
+  it("expands a month-only range across two months", () => {
+    const task = only(parseTasks(doc("- [ ] T @{2026-4 - 2026-5}")));
+    expect(task.start).toBe("2026-04-01");
+    expect(task.due).toBe("2026-05-31");
+  });
+
+  it("rejects invalid months", () => {
+    const task = only(parseTasks(doc("- [ ] T @{2026-13-1}")));
+    expect(task.due).toBeUndefined();
+  });
+
+  it("rejects invalid days for the month", () => {
+    const task = only(parseTasks(doc("- [ ] T @{2026-2-30}")));
+    expect(task.due).toBeUndefined();
+  });
+});
+
+describe("parseTasks: twin @{} kanban range", () => {
+  it("parses @{date} - @{date} as a range", () => {
+    const task = only(
+      parseTasks(doc("- [ ] Sprint @{2025-05-17} - @{2025-05-20}"))
+    );
+    expect(task.start).toBe("2025-05-17");
+    expect(task.due).toBe("2025-05-20");
+    expect(task.dueSource).toBe("kanban");
+    expect(task.label).toBe("Sprint");
+  });
+
+  it("supports loose dates in twin form", () => {
+    const task = only(
+      parseTasks(doc("- [ ] Sprint @{2026-4} - @{2026-5-15}"))
+    );
+    expect(task.start).toBe("2026-04-01");
+    expect(task.due).toBe("2026-05-15");
+  });
+
+  it("drops start when twin start > due", () => {
+    const task = only(
+      parseTasks(doc("- [ ] Bad @{2025-05-20} - @{2025-05-17}"))
+    );
+    expect(task.start).toBeUndefined();
+    expect(task.due).toBe("2025-05-17");
+  });
+});
+
+describe("parseTasks: tags", () => {
+  it("extracts a single tag from the task body", () => {
+    const task = only(parseTasks(doc("- [ ] Plan #work (@2025-05-20)")));
+    expect(task.tags).toEqual(["work"]);
+  });
+
+  it("extracts multiple tags in source order, de-duped", () => {
+    const task = only(
+      parseTasks(doc("- [ ] T #alpha #beta #alpha (@2025-05-20)"))
+    );
+    expect(task.tags).toEqual(["alpha", "beta"]);
+  });
+
+  it("ignores `#` not preceded by whitespace (e.g. in URLs)", () => {
+    const task = only(
+      parseTasks(doc("- [ ] See https://example.com/page#section (@2025-05-20)"))
+    );
+    expect(task.tags).toBeUndefined();
+  });
+
+  it("ignores pure-numeric `#2025`", () => {
+    const task = only(parseTasks(doc("- [ ] Issue #2025 (@2025-05-20)")));
+    expect(task.tags).toBeUndefined();
+  });
+
+  it("supports nested tags via `/`", () => {
+    const task = only(
+      parseTasks(doc("- [ ] T #area/web (@2025-05-20)"))
+    );
+    expect(task.tags).toEqual(["area/web"]);
+  });
+
+  it("does not set tags when none are present", () => {
+    const task = only(parseTasks(doc("- [ ] Plain (@2025-05-20)")));
+    expect(task.tags).toBeUndefined();
+  });
+});

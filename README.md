@@ -63,6 +63,25 @@ date.
 - [ ] Review PR @{2025-05-19 - 2025-05-21}
 ```
 
+For the kanban form you can also write two separate `@{...}` markers
+joined by ` - `:
+
+```markdown
+- [ ] Sprint @{2025-05-19} - @{2025-05-21}
+```
+
+### Loose date formats
+
+Month and day may omit the leading zero. A month-only date expands to
+the full month (start = first day, due = last day), which is useful
+for marking approximate windows.
+
+```markdown
+- [ ] Pin to April @{2026-4}
+- [ ] Q2 push @{2026-4 - 2026-6}
+- [ ] Single day (@2026-4-1)
+```
+
 ### Linked-page tasks
 
 Instead of writing the title inline, you can point the checkbox at a
@@ -89,11 +108,12 @@ Done tasks (`[x]`) are hidden by default.
 
 ### Bar colors
 
-Bars are colored deterministically:
+Bars are colored deterministically, in this order of preference:
 
-- Tasks parsed from a `@{...}` (kanban) marker take their color from
-  the most recent Markdown heading above them — useful for visually
-  grouping kanban columns.
+- If the task body contains any `#tag`, the bar is colored by the
+  first tag — so tasks sharing a tag share a color.
+- Otherwise, tasks parsed from a `@{...}` (kanban) marker take their
+  color from the most recent Markdown heading above them.
 - Linked-page tasks are colored by the linked page.
 - Everything else is colored by the file the task lives in.
 

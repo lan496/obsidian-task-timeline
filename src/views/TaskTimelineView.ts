@@ -467,8 +467,11 @@ function renderTickRow(
   }
 }
 
-// Group related tasks visually: same column / page / host file -> same color.
+// Group related tasks visually: same tag / column / page / host file -> same color.
 function barColor(task: DatedTask): string {
+  if (task.tags !== undefined && task.tags.length > 0 && task.tags[0] !== undefined) {
+    return hashColor(`tag:${task.tags[0]}`);
+  }
   if (task.dueSource === "kanban" && task.column !== undefined) {
     return hashColor(task.column);
   }
