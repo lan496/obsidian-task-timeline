@@ -12,6 +12,7 @@
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import process from "node:process";
 
 const REPO = "lan496/obsidian-task-timeline";
 const PLUGIN_ID = "obsidian-task-timeline";
