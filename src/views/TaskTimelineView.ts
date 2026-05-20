@@ -36,12 +36,15 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+const TODAY_POLL_MS = 60_000;
+
 export class TaskTimelineView extends ItemView {
   private unsubscribe: Unsubscribe | null = null;
   private currentLevel: ZoomLevel;
   private currentRange: { start: string; end: string } | null = null;
   private currentDayWidth = 0;
   private zoomFactor = 1;
+  private lastRenderedToday = "";
   private readonly scheduleRender = debounce(
     () => {
       this.render();
@@ -69,6 +72,13 @@ export class TaskTimelineView extends ItemView {
 
   async onOpen(): Promise<void> {
     this.unsubscribe = this.store.subscribe(this.scheduleRender);
+    this.registerInterval(
+      window.setInterval(() => {
+        if (todayIso() !== this.lastRenderedToday) {
+          this.scheduleRender();
+        }
+      }, TODAY_POLL_MS)
+    );
     this.render();
   }
 
@@ -148,7 +158,9 @@ export class TaskTimelineView extends ItemView {
       1,
       this.settingsView.settings.maxAhead[this.currentLevel]
     );
-    const windowStart = startOfPeriod(todayIso(), this.currentLevel);
+    const today = todayIso();
+    this.lastRenderedToday = today;
+    const windowStart = startOfPeriod(today, this.currentLevel);
     const windowEnd = addDays(
       addPeriods(windowStart, this.currentLevel, periods),
       -1
