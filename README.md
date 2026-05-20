@@ -11,9 +11,23 @@ axis, so you can see what's due, what overlaps, and what's coming up.
 
 ## Install
 
-Not yet in the community plugin store. Two options:
+Not yet in the community plugin store. Three options:
 
-### Scripted (recommended)
+### BRAT (auto-updates, recommended)
+
+If you already use the [BRAT](https://github.com/TfTHacker/obsidian42-brat)
+community plugin, point it at this repo and BRAT will install the
+latest release and keep it up to date automatically:
+
+1. Install **BRAT** from Obsidian's community plugin store and enable it.
+2. Open the command palette and run **BRAT: Add a beta plugin**.
+3. Paste `https://github.com/lan496/obsidian-task-timeline` and confirm.
+4. Open **Settings → Community plugins** and enable **Task Timeline**.
+
+BRAT will then pick up new releases on its own — no need to re-run any
+scripts when a new version ships.
+
+### Scripted
 
 Requires Node 18+. Download `install-release.mjs` from the
 [latest release](https://github.com/lan496/obsidian-task-timeline/releases/latest)
