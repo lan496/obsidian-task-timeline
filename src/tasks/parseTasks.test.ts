@@ -145,6 +145,15 @@ describe("parseTasks: dash ranges", () => {
     expect(task.dueSource).toBe("reminder");
   });
 
+  it("parses a reminder-form range with @ on both ends", () => {
+    const task = only(
+      parseTasks(doc("- [ ] Ship (@2025-05-17 - @2025-05-20)"))
+    );
+    expect(task.start).toBe("2025-05-17");
+    expect(task.due).toBe("2025-05-20");
+    expect(task.dueSource).toBe("reminder");
+  });
+
   it("parses a tasks-emoji range", () => {
     const task = only(
       parseTasks(doc("- [ ] Plan \u{1F4C5} 2025-05-17 - 2025-05-20"))
