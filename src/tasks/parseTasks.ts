@@ -31,7 +31,10 @@ const DATE = "\\d{4}-\\d{1,2}(?:-\\d{1,2})?";
 // date and the whole marker stops matching.
 const TIME_OPT = "(?:\\s+\\d{1,2}:\\d{2})?";
 const REMINDER_DATE = `(${DATE})${TIME_OPT}`;
-const REMINDER_RANGE = `${REMINDER_DATE}(?:\\s+-\\s+${REMINDER_DATE})?`;
+// The end of a range may repeat the `@` sigil (`@start - @end`), which is how
+// the reminder plugin writes two-sided ranges. `@` on the end date is optional
+// so `@start - end` keeps working too.
+const REMINDER_RANGE = `${REMINDER_DATE}(?:\\s+-\\s+@?${REMINDER_DATE})?`;
 const PLAIN_RANGE = `(${DATE})(?:\\s+-\\s+(${DATE}))?`;
 // Two separate `@{date}` markers joined by ` - `. The single-marker
 // kanban pattern below would otherwise greedily match only the first
