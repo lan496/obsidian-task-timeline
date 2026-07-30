@@ -97,7 +97,7 @@ export class TaskTimelineSettingsTab extends PluginSettingTab {
       )
       .addText((text) =>
         text
-          .setPlaceholder("stale, someday")
+          .setPlaceholder("Stale, someday")
           .setValue(this.host.settings.ignoreTags.join(", "))
           .onChange(async (value) => {
             this.host.settings.ignoreTags = parseTagList(value);
