@@ -154,6 +154,9 @@ export class TaskTimelineView extends ItemView {
     this.renderToolbar();
 
     const ignored = new Set(this.settingsView.settings.ignoreColumns);
+    const ignoredTags = new Set(
+      this.settingsView.settings.ignoreTags.map((tag) => tag.toLowerCase())
+    );
     const periods = Math.max(
       1,
       this.settingsView.settings.maxAhead[this.currentLevel]
@@ -171,6 +174,11 @@ export class TaskTimelineView extends ItemView {
       .filter(hasDate)
       .filter((t) => !t.done)
       .filter((t) => t.column === undefined || !ignored.has(t.column))
+      .filter(
+        (t) =>
+          t.tags === undefined ||
+          !t.tags.some((tag) => ignoredTags.has(tag.toLowerCase()))
+      )
       .sort((a, b) => {
         const aStart = a.start ?? a.due;
         const bStart = b.start ?? b.due;

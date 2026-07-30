@@ -1,6 +1,11 @@
 import { App, normalizePath, Plugin, PluginSettingTab, Setting } from "obsidian";
 import { DEFAULT_DAY_WIDTH, ZOOM_LEVELS, ZoomLevel } from "../timeline/zoom";
-import { parseFolderList, TaskTimelineSettings, WeekStart } from "./types";
+import {
+  parseFolderList,
+  parseTagList,
+  TaskTimelineSettings,
+  WeekStart,
+} from "./types";
 
 function parseFolderPathList(value: string): string[] {
   return parseFolderList(value).map((entry) => normalizePath(entry));
@@ -80,6 +85,22 @@ export class TaskTimelineSettingsTab extends PluginSettingTab {
           .setValue(this.host.settings.weekStart)
           .onChange(async (value) => {
             this.host.settings.weekStart = value as WeekStart;
+            await this.host.saveSettings();
+            this.host.onSettingsChanged();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Ignore tags")
+      .setDesc(
+        "Comma-separated tag names (without #). Due dates on tasks carrying any of these tags are ignored, so they are hidden from the timeline."
+      )
+      .addText((text) =>
+        text
+          .setPlaceholder("Stale, someday")
+          .setValue(this.host.settings.ignoreTags.join(", "))
+          .onChange(async (value) => {
+            this.host.settings.ignoreTags = parseTagList(value);
             await this.host.saveSettings();
             this.host.onSettingsChanged();
           })

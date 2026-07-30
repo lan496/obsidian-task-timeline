@@ -165,6 +165,9 @@ Open **Settings → Task Timeline**.
 - **Default zoom** — granularity the view opens at.
 - **Start of week** — Monday or Sunday; affects the week axis under
   the Month view.
+- **Ignore tags** — tag names (without `#`) whose due dates are
+  ignored; tagged tasks are hidden from the timeline. Defaults to
+  `stale`.
 - **Kanban → Ignore columns** — heading names whose tasks are hidden.
   Defaults to `Done`.
 - **Window size per zoom** — how many months / quarters / years the

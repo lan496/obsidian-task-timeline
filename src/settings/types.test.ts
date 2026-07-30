@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseFolderList, shouldIncludePath } from "./types";
+import { parseFolderList, parseTagList, shouldIncludePath } from "./types";
 
 describe("shouldIncludePath", () => {
   it("includes everything when both lists are empty", () => {
@@ -45,5 +45,23 @@ describe("parseFolderList", () => {
   it("returns an empty array for empty input", () => {
     expect(parseFolderList("")).toEqual([]);
     expect(parseFolderList("   ")).toEqual([]);
+  });
+});
+
+describe("parseTagList", () => {
+  it("splits on comma and trims whitespace", () => {
+    expect(parseTagList(" stale , someday ")).toEqual(["stale", "someday"]);
+  });
+
+  it("strips a leading #", () => {
+    expect(parseTagList("#stale, someday")).toEqual(["stale", "someday"]);
+  });
+
+  it("drops entries that are only a #", () => {
+    expect(parseTagList("#, stale")).toEqual(["stale"]);
+  });
+
+  it("returns an empty array for empty input", () => {
+    expect(parseTagList("")).toEqual([]);
   });
 });

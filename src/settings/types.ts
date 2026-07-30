@@ -9,6 +9,9 @@ export interface TaskTimelineSettings {
   dayWidths: Record<ZoomLevel, number>;
   weekStart: WeekStart;
   ignoreColumns: string[];
+  // Tag names (without `#`). Due dates on tasks carrying any of these
+  // tags are ignored, so those tasks never appear on the timeline.
+  ignoreTags: string[];
   // Number of level-units the timeline spans, starting at the current
   // period. Tasks earlier than the window pin to the left edge; tasks
   // later than the window pin to the right edge.
@@ -22,6 +25,7 @@ export const DEFAULT_SETTINGS: TaskTimelineSettings = {
   dayWidths: { ...DEFAULT_DAY_WIDTH },
   weekStart: "mon",
   ignoreColumns: ["Done"],
+  ignoreTags: ["stale"],
   maxAhead: { month: 3, quarter: 4, year: 10 },
 };
 
@@ -47,4 +51,10 @@ export function parseFolderList(value: string): string[] {
     .split(",")
     .map((part) => part.trim())
     .filter((part) => part.length > 0);
+}
+
+export function parseTagList(value: string): string[] {
+  return parseFolderList(value)
+    .map((entry) => entry.replace(/^#/, ""))
+    .filter((entry) => entry.length > 0);
 }
